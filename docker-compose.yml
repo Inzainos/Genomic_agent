@@ -1,0 +1,111 @@
+version: "3.9"
+
+# ==============================================================================
+# SNT Genomic Topologic Analyzer — Master Compose File
+# ==============================================================================
+# Boot order:
+#   1. db_builder      → seeds SQLite database into shared /data volume
+#   2. mock_services   → starts the FastAPI mock integration layer
+#   3. agent_core      → starts Streamlit UI (depends on both above)
+#
+# Usage:
+#   docker compose --env-file .env up --build
+# ==============================================================================
+
+networks:
+  snt_network:
+    driver: bridge
+
+volumes:
+  snt_data:
+    driver: local
+
+services:
+
+  # ── 1. Database Builder ────────────────────────────────────────────────────
+  db_builder:
+    build:
+      context: ./genomic_database
+      dockerfile: Dockerfile
+    container_name: snt_db_builder
+    volumes:
+      - snt_data:/data
+    environment:
+      SNT_DB_PATH: /data/snt_genomic.db
+    networks:
+      - snt_network
+    restart: "no"                  # Run once and exit
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── 2. Mock Integration Services ──────────────────────────────────────────
+  mock_services:
+    build:
+      context: ./mock_services
+      dockerfile: Dockerfile
+    container_name: snt_mock_services
+    ports:
+      - "8081:8081"
+    volumes:
+      - snt_data:/data
+    networks:
+      - snt_network
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8081/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── 3. Agent Core + Streamlit UI ──────────────────────────────────────────
+  agent_core:
+    build:
+      context: ./agent_core
+      dockerfile: Dockerfile
+    container_name: snt_agent_core
+    ports:
+      - "8501:8501"
+    volumes:
+      - snt_data:/data
+    environment:
+      # ── Database
+      SNT_DB_PATH:        /data/snt_genomic.db
+      SNT_Z_THRESHOLD:    ${SNT_Z_THRESHOLD:-2.5}
+      # ── LLM
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      LLM_MODEL:          ${LLM_MODEL:-anthropic/claude-3.5-sonnet}
+      # ── Mock services (internal Docker DNS)
+      MOCK_SERVICE_URL:   http://mock_services:8081
+      # ── Telegram (real notification)
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID:   ${TELEGRAM_CHAT_ID:-}
+    depends_on:
+      db_builder:
+        condition: service_completed_successfully
+      mock_services:
+        condition: service_healthy
+    networks:
+      - snt_network
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"

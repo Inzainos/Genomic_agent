@@ -1,0 +1,3 @@
+# genomic_database/requirements.txt
+# Minimal — only stdlib sqlite3 is used; no extra packages needed.
+# Kept as placeholder to satisfy Docker COPY convention.
