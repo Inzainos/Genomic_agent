@@ -22,6 +22,26 @@ import sqlite3
 import sys
 from pathlib import Path
 
+
+# ── Path resolvers ───────────────────────────────────────────────────────────
+def _resolve_db_path() -> Path:
+    env = os.getenv("SNT_DB_PATH")
+    if env:
+        return Path(env)
+    # Docker
+    docker = Path("/data/snt_genomic.db")
+    if Path("/data").exists() and os.access("/data", os.W_OK):
+        return docker
+    # WSL2 native — put db next to this script
+    return Path(__file__).parent / "snt_genomic.db"
+
+
+def _resolve_log() -> str:
+    if Path("/data").exists() and os.access("/data", os.W_OK):
+        return "/data/db_builder.log"
+    return str(Path(__file__).parent / "db_builder.log")
+
+
 # ── Logging ─────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.DEBUG,
@@ -34,23 +54,7 @@ logging.basicConfig(
 logger = logging.getLogger("SNT.DBBuilder")
 
 # ── Constants ────────────────────────────────────────────────────────────────
-def _resolve_db_path() -> Path:
-    env = os.getenv("SNT_DB_PATH")
-    if env:
-        return Path(env)
-    # Docker
-    docker = Path("/data/snt_genomic.db")
-    if Path("/data").exists() and os.access("/data", os.W_OK):
-        return docker
-    # WSL2 native — put db next to this script
-    return Path(__file__).parent / "snt_genomic.db"
-
 DB_PATH = _resolve_db_path()
-
-def _resolve_log() -> str:
-    if Path("/data").exists() and os.access("/data", os.W_OK):
-        return "/data/db_builder.log"
-    return str(Path(__file__).parent / "db_builder.log")
 
 # ── Synthetic reference data ─────────────────────────────────────────────────
 # Calibrated to biological realism: MYC regulon + additional hubs
