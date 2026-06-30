@@ -200,3 +200,49 @@ BRCA1,30.4
 CDK4,280.1
 ...
 ```
+
+
+---
+
+## ACO-A & 5-Event Wall (SNT v30)
+
+El agente integra el framework de **Colapso Orbital Acoplado (ACO-A)**:
+
+### Ejes ortogonales (b ⊥ Δ)
+- **Eje b** (satelización): `R(t) = a·t^b` — dominancia hub vs satélite mientras corre el acoplamiento
+- **Eje Δ** (absorción): `A(τ) = c·τ^Δ` — velocidad de absorción post-colapso del hub
+
+### Fricción biológica F_bio
+```
+F_bio = mean(TPM_guardian_genes) / 100
+Guardian genes: TP53, BRCA1, BRCA2, MLH1, ATM, CHEK2, RAD51, FANCD2, RB1, PTEN
+F > 0.5  → alta fricción → Regulated_Orbital_Decay
+F ≤ 0.5  → baja fricción → Catastrophic_Cliff / Cracquelure_Decay / Floor_Arrested
+```
+
+### Modos de colapso
+| Modo | Condición | Descripción |
+|------|-----------|-------------|
+| Regulated_Orbital_Decay | F > 0.5 | Absorción suave, guardada por fricción |
+| Cracquelure_Decay | F ≈ 0, gradual | Fragmentación progresiva |
+| Floor_Arrested | F ≈ 0, abrupto, piso | Colapso abrupto con piso estable |
+| Catastrophic_Cliff | F ≈ 0, abrupto, sin piso | Caída libre sin recuperación |
+| Logistic_Sweep | magnitud acotada | Barrido logístico (ej. variante viral) |
+
+### 5-Event Wall
+Firma empírica de ≥5 colaps os hub simultáneos. Derivada de corpus TCGA n=2,746.
+- Conecta con la Ley de Inevitabilidad: cuando ≥5 hubs colapsan, h(τ) → máximo
+- Ver tab "🧬 5-Event Wall" en la UI Streamlit
+- Endpoint REST: `GET /tcga/wall_summary`
+
+### Uso CLI
+```bash
+# Modo clínico individual (ratio-based)
+python run_ingesta.py --patient PX-001 --csv paciente.csv --mode ratio
+
+# Modo poblacional (gene-based, TCGA-compatible)
+python run_ingesta.py --patient PX-001 --csv paciente.csv --mode gene
+
+# Export JSON con resultados ACO-A incluidos
+python run_ingesta.py --patient PX-001 --notes "LUAD suspected" --json-out report.json
+```
