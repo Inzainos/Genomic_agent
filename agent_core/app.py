@@ -25,6 +25,7 @@ from agent_logic import (
     run_full_analysis,
     verify_guardrails,
     AnalysisReport,
+    ACOAResult,
 )
 from data_sanitizer import DataSanitizer, SanitizationReport
 
@@ -300,6 +301,45 @@ with tab_analysis:
                     st.info(
                         f"💡 **{len(report.orphan_anomalies)}** orphan anomalies detected — "
                         "patterns NOT in the disease oracle. Possible novel biomarkers."
+                    )
+
+            # ── ACO-A Frame ───────────────────────────────────────────────────
+            with st.expander("🌀 ACO-A — Orbital Collapse Analysis (b⊥Δ)", expanded=True):
+                if not report.aco_results:
+                    st.info("No HUB_COLLAPSE events confirmed — ACO-A analysis not triggered.")
+                else:
+                    st.markdown(
+                        "**Marco ortogonal (b, Δ):** cada hub colapsado se ubica en el "
+                        "espacio de satelización × absorción de la ACO-A. "
+                        "La fricción biológica determina el modo de colapso."
+                    )
+                    MODE_ICONS = {
+                        "Regulated_Orbital_Decay": "🟢",
+                        "Cracquelure_Decay":        "🟡",
+                        "Floor_Arrested":           "🟠",
+                        "Catastrophic_Cliff":       "🔴",
+                        "Logistic_Sweep":           "🔵",
+                    }
+                    aco_rows = []
+                    for a in report.aco_results:
+                        icon = MODE_ICONS.get(a.collapse_mode, "⚪")
+                        delta_str = f"{a.delta:.3f} (R²={a.delta_r2:.2f})" if a.delta == a.delta else "N/A"
+                        aco_rows.append({
+                            "Hub":           a.hub_gene,
+                            "Modo":          f"{icon} {a.collapse_mode.replace('_',' ')}",
+                            "Δ (absorción)": delta_str,
+                            "F (fricción)":  f"{a.friction_index:.2f}",
+                            "Trigger":       a.trigger,
+                            "Piso":          "✅" if a.has_floor else "❌",
+                            "Absorbedor":    a.absorber_gene,
+                            "ΔTPM abs":      f"+{a.absorber_delta_tpm:.1f}",
+                        })
+                    st.dataframe(pd.DataFrame(aco_rows), use_container_width=True)
+                    f_val   = report.aco_results[0].friction_index
+                    f_label = "🟢 Alta — Decaimiento Regulado probable" if f_val > 0.5                               else "🔴 Baja — Acantilado Catastrófico en riesgo"
+                    st.metric("Índice de Fricción Biológica (F)", f"{f_val:.3f}", f_label)
+                    st.caption(
+                        "Ref: SNT v2.5.0 · ACO-A · ssrn.com/abstract=6418778"
                     )
 
             # ── LLM ──────────────────────────────────────────────────────────
