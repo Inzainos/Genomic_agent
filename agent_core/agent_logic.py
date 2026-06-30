@@ -38,6 +38,13 @@ from typing import Any, Optional
 
 import requests
 
+try:
+    from scipy.optimize import curve_fit
+    from scipy.stats import spearmanr
+    SCIPY_OK = True
+except ImportError:
+    SCIPY_OK = False
+
 # ── Path resolution — Docker (/data) vs WSL2 native (script dir) ─────────────
 _HERE = Path(__file__).parent.resolve()
 
@@ -99,6 +106,31 @@ MOCK_SERVICE_URL = os.getenv("MOCK_SERVICE_URL",     "http://localhost:8081")
 TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN",   "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID",     "")
 Z_THRESHOLD      = float(os.getenv("SNT_Z_THRESHOLD","2.5"))
+
+# ── ACO-A: friction proxy genes (high expression = high friction = Regulated Decay)
+# These genes represent active DNA repair, apoptosis, and cell cycle checkpoints.
+# Their combined TPM level is used as a biological friction index F.
+FRICTION_GENES: list[str] = [
+    "TP53",    # genome guardian
+    "BRCA1",   # DNA repair
+    "BRCA2",   # DNA repair
+    "MLH1",    # mismatch repair
+    "ATM",     # DNA damage response
+    "CHEK2",   # checkpoint kinase
+    "RAD51",   # homologous recombination
+    "FANCD2",  # Fanconi anemia pathway
+    "RB1",     # cell cycle brake
+    "PTEN",    # PI3K brake
+]
+
+# ACO-A collapse modes (friction × trigger × floor)
+COLLAPSE_MODES = {
+    "Regulated_Orbital_Decay":  "Friction alta — caída suave ley de potencias (R²≥0.85)",
+    "Cracquelure_Decay":        "Fricción≈0 + gradual — fragmentación errática",
+    "Floor_Arrested":           "Fricción≈0 + abrupto + piso residual — power law a piso",
+    "Catastrophic_Cliff":       "Fricción≈0 + abrupto + sin piso — super-exponencial",
+    "Logistic_Sweep":           "Magnitud acotada — curva S (reemplazo de variante)",
+}
 LLM_MODEL        = os.getenv("LLM_MODEL",            "anthropic/claude-3.5-sonnet")
 
 logger.info("[CONFIG] DB path: %s", DB_PATH)
@@ -158,11 +190,32 @@ class TriageMatch:
 
 
 @dataclass
+class ACOAResult:
+    """Resultado del análisis ACO-A para un hub en HUB_COLLAPSE."""
+    hub_gene:        str
+    tau_points:      list[float]        # timepoints τ desde extinción funcional
+    tpm_values:      list[float]        # valores TPM en cada τ
+    delta:           float              # exponente de absorción Δ (NaN si no calculable)
+    delta_r2:        float              # bondad de ajuste A(τ) = c·τ^Δ
+    friction_index:  float              # F: promedio TPM de FRICTION_GENES normalizado
+    has_floor:       bool               # ¿hay piso residual? (TPM final > 5% del pico)
+    trigger:         str                # "abrupt" | "gradual"
+    collapse_mode:   str                # uno de COLLAPSE_MODES
+    absorber_gene:   str                # gen que absorbe la masa del hub (mayor ganancia TPM)
+    absorber_delta_tpm: float           # ganancia TPM del absorbedor en τ_final - τ_0
+    mode_description: str              # descripción del modo
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
 class AnalysisReport:
     """Full output of the SNT Two-Level Analysis."""
     patient_id:       str
     triage_matches:   list[TriageMatch]     = field(default_factory=list)
     orphan_anomalies: list[SNTAnomaly]      = field(default_factory=list)
+    aco_results:      list[ACOAResult]      = field(default_factory=list)
     llm_diagnosis:    str                   = ""
     notification_ids: dict[str, str]        = field(default_factory=dict)
     error:            Optional[str]         = None
@@ -509,8 +562,9 @@ def _build_llm_prompt(
     clinical_notes: str,
     triage_matches: list[TriageMatch],
     orphan_anomalies: list[SNTAnomaly],
+    aco_results: list["ACOAResult"] | None = None,
 ) -> str:
-    """Construct the structured medical prompt for Claude."""
+    """Construct the structured medical prompt for Claude — includes ACO-A frame."""
     confirmed = [m for m in triage_matches if m.confirmed]
     tentative = [m for m in triage_matches if not m.confirmed]
 
@@ -531,6 +585,22 @@ def _build_llm_prompt(
         for a in orphan_anomalies[:10]  # limit for prompt size
     ) or "  None."
 
+    # Build ACO-A section
+    aco_text = "  None (snapshot-only analysis)."
+    if aco_results:
+        lines = []
+        for a in aco_results:
+            delta_str = f"{a.delta:.3f} (R²={a.delta_r2:.2f})" if a.delta == a.delta else "N/A"
+            lines.append(
+                f"  - Hub={a.hub_gene} | Mode={a.collapse_mode} | "
+                f"Δ={delta_str} | F={a.friction_index:.2f} | "
+                f"Trigger={a.trigger} | Floor={'yes' if a.has_floor else 'no'} | "
+                f"Absorber={a.absorber_gene} (+{a.absorber_delta_tpm:.1f} TPM)
+"
+                f"    → {a.mode_description}"
+            )
+        aco_text = "\n".join(lines)
+
     return f"""You are a senior clinical geneticist specialising in functional genomics and 
 topological network analysis. Your task is to generate a clear, structured medical report 
 based on the SNT (Satellite-Node Topology) analysis results below.
@@ -549,6 +619,9 @@ LEVEL 1 — TENTATIVE MATCHES (sub-threshold):
 LEVEL 2 — ORPHAN ANOMALIES (novel, not in disease oracle):
 {orphan_text}
 
+ACO-A — ORBITAL COLLAPSE ANALYSIS (b⊥Δ framework):
+{aco_text}
+
 === REPORT INSTRUCTIONS ===
 Generate a professional medical report with the following sections:
 1. EXECUTIVE SUMMARY (2-3 sentences, plain language for oncologist)
@@ -557,7 +630,12 @@ Generate a professional medical report with the following sections:
 4. FUNCTIONAL INTERPRETATION (explain what HUB_COLLAPSE / LEAPFROG / SATELLITE_CAPTURE 
    means biologically for this patient's case)
 5. RECOMMENDED CLINICAL ACTIONS (next steps: additional testing, specialist referral, etc.)
-6. DISCLAIMER
+6. ACO-A ORBITAL COLLAPSE INTERPRETATION (if ACO-A data present):
+   - Explain the collapse mode detected (Regulated Decay vs Catastrophic Cliff)
+   - Describe the absorber gene and its clinical significance
+   - Interpret the Δ exponent if available (fast vs slow absorption)
+   - Connect to friction: which biological mechanisms are providing friction (or not)
+7. DISCLAIMER
 
 Be precise, evidence-based, and avoid speculative language beyond the data provided.
 """
@@ -694,6 +772,269 @@ def notify_telegram(message: str) -> bool:
         return False
 
 
+
+# ── ACO-A Engine ──────────────────────────────────────────────────────────────
+
+def load_timeseries(patient_id: str, gene_id: str) -> tuple[list[float], list[float]]:
+    """Fetch (timepoints, tpm_values) for a gene from timeseries table."""
+    conn = _get_connection()
+    try:
+        rows = conn.execute(
+            """
+            SELECT timepoint, tpm_value
+            FROM patient_expression_timeseries
+            WHERE patient_id = ? AND gene_id = ?
+            ORDER BY timepoint ASC
+            """,
+            (patient_id, gene_id),
+        ).fetchall()
+        if not rows:
+            return [], []
+        taus = [r["timepoint"] for r in rows]
+        tpms = [r["tpm_value"]  for r in rows]
+        return taus, tpms
+    finally:
+        conn.close()
+
+
+def compute_friction_index(expression: dict[str, float]) -> float:
+    """
+    F = mean(TPM_friction_genes) / 100.0, clamped [0, 1].
+    F > 0.5 → high friction (Regulated Decay)
+    F ≤ 0.5 → low friction (Cliff / Cracquelure risk)
+    """
+    vals = [expression.get(g, 0.0) for g in FRICTION_GENES if expression.get(g, 0.0) > 0]
+    if not vals:
+        return 0.0
+    return min(1.0, sum(vals) / len(vals) / 100.0)
+
+
+def _power_law(tau: float, c: float, delta: float) -> float:
+    """A(τ) = c · |τ|^Δ  (τ > 0 post-extinction)"""
+    import math
+    if tau <= 0:
+        return c
+    return c * (tau ** delta)
+
+
+def fit_delta(taus: list[float], tpms: list[float]) -> tuple[float, float]:
+    """
+    Fit A(τ) = c · τ^Δ on post-extinction data (τ > 0).
+    Returns (Δ, R²). Returns (float('nan'), 0.0) if insufficient data.
+    """
+    import math
+    import numpy as np
+
+    post = [(t, v) for t, v in zip(taus, tpms) if t > 0 and v > 0]
+    if len(post) < 2:
+        return float("nan"), 0.0
+
+    ts = np.array([p[0] for p in post], dtype=float)
+    vs = np.array([p[1] for p in post], dtype=float)
+
+    if not SCIPY_OK:
+        # Fallback: log-linear regression for power law
+        log_t = np.log(ts)
+        log_v = np.log(vs)
+        delta_est = np.polyfit(log_t, log_v, 1)[0]
+        ss_res = np.sum((log_v - np.polyval(np.polyfit(log_t, log_v, 1), log_t)) ** 2)
+        ss_tot = np.sum((log_v - np.mean(log_v)) ** 2)
+        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+        return float(delta_est), float(r2)
+
+    try:
+        popt, _ = curve_fit(
+            lambda t, c, d: c * np.power(t, d),
+            ts, vs,
+            p0=[vs[0], -0.5],
+            maxfev=5000,
+        )
+        c_fit, delta_fit = popt
+        v_pred = c_fit * np.power(ts, delta_fit)
+        ss_res = np.sum((vs - v_pred) ** 2)
+        ss_tot = np.sum((vs - np.mean(vs)) ** 2)
+        r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
+        return float(delta_fit), float(r2)
+    except Exception:
+        return float("nan"), 0.0
+
+
+def classify_collapse_mode(
+    friction_index: float,
+    trigger: str,
+    has_floor: bool,
+    taus: list[float],
+    tpms: list[float],
+) -> str:
+    """
+    Classify collapse mode per ACO-A taxonomy:
+      friction × trigger × floor → mode
+    """
+    if friction_index > 0.5:
+        return "Regulated_Orbital_Decay"
+
+    # Low friction branch
+    if len(tpms) >= 2:
+        # Check if magnitude is bounded (logistic — e.g. frequency-domain collapse)
+        max_tpm = max(tpms)
+        min_tpm = min(tpms)
+        if max_tpm > 0 and (max_tpm - min_tpm) / max_tpm < 0.3:
+            return "Logistic_Sweep"
+
+    if trigger == "gradual":
+        return "Cracquelure_Decay"
+    else:
+        # Abrupt
+        if has_floor:
+            return "Floor_Arrested"
+        else:
+            return "Catastrophic_Cliff"
+
+
+def find_absorber(
+    hub_gene: str,
+    expression_t0: dict[str, float],
+    expression_tfinal: dict[str, float],
+) -> tuple[str, float]:
+    """
+    Find the gene with the largest TPM gain when the hub collapses.
+    This is the absorber — the node capturing the hub's regulatory mass.
+    Returns (absorber_gene, delta_tpm).
+    """
+    best_gene  = "unknown"
+    best_delta = 0.0
+    # Only look at genes that were satellites of this hub in the baseline
+    conn = _get_connection()
+    try:
+        rows = conn.execute(
+            "SELECT satellite_gene FROM baseline_network_reference WHERE hub_gene = ?",
+            (hub_gene,),
+        ).fetchall()
+        satellites = {r["satellite_gene"] for r in rows}
+    finally:
+        conn.close()
+
+    for gene in satellites:
+        t0_val = expression_t0.get(gene, 0.0)
+        tf_val = expression_tfinal.get(gene, 0.0)
+        delta  = tf_val - t0_val
+        if delta > best_delta:
+            best_delta = delta
+            best_gene  = gene
+
+    return best_gene, best_delta
+
+
+def run_aco_analysis(
+    patient_id: str,
+    confirmed_collapses: list[TriageMatch],
+    expression: dict[str, float],
+) -> list[ACOAResult]:
+    """
+    For each confirmed HUB_COLLAPSE, compute ACO-A frame:
+      - Load timeseries for the hub gene
+      - Fit Δ from post-extinction data
+      - Classify collapse mode
+      - Identify absorber gene
+
+    Falls back to qualitative mode if only snapshot available.
+    """
+    logger.info("[ACO-A] Starting ACO-A analysis for %d collapsed hubs...",
+                len(confirmed_collapses))
+    results: list[ACOAResult] = []
+
+    friction_index = compute_friction_index(expression)
+    logger.info("[ACO-A] Friction index F=%.3f (%s)",
+                friction_index,
+                "HIGH" if friction_index > 0.5 else "LOW")
+
+    for match in confirmed_collapses:
+        if match.expected_anomaly != "HUB_COLLAPSE":
+            continue
+
+        hub = match.hub_gene
+        logger.info("[ACO-A] Analyzing hub: %s (Disease: %s)", hub, match.disease_name)
+
+        # Load timeseries
+        taus, tpms = load_timeseries(patient_id, hub)
+        has_timeseries = len(taus) >= 2
+
+        # Determine trigger: abrupt if TPM drop > 70% between first two timepoints
+        trigger = "gradual"
+        if has_timeseries and len(tpms) >= 2:
+            drop_pct = (tpms[0] - tpms[1]) / tpms[0] if tpms[0] > 0 else 0
+            trigger  = "abrupt" if drop_pct > 0.5 else "gradual"
+        elif not has_timeseries:
+            # Infer from Z-score magnitude
+            trigger = "abrupt" if abs(match.detected_z_score) > 4.0 else "gradual"
+
+        # Floor: final TPM > 5% of initial?
+        has_floor = False
+        if has_timeseries and tpms:
+            has_floor = tpms[-1] > 0.05 * tpms[0]
+        else:
+            # Snapshot proxy: current TPM > 5% of healthy baseline
+            conn = _get_connection()
+            ref = conn.execute(
+                """SELECT mean_ratio FROM baseline_network_reference
+                   WHERE hub_gene = ? LIMIT 1""",
+                (hub,),
+            ).fetchone()
+            conn.close()
+            if ref:
+                healthy_approx = ref["mean_ratio"] * 100
+                has_floor = expression.get(hub, 0.0) > 0.05 * healthy_approx
+
+        # Fit Δ
+        delta, delta_r2 = fit_delta(taus, tpms) if has_timeseries else (float("nan"), 0.0)
+
+        # Classify mode
+        mode = classify_collapse_mode(friction_index, trigger, has_floor, taus, tpms)
+
+        # Find absorber — use snapshot for now (τ=0 vs τ_final proxy)
+        expr_t0     = expression
+        expr_tfinal = expression  # same snapshot; timeseries extends this
+        if has_timeseries:
+            # Build expression dict at τ_final from all timeseries genes
+            conn = _get_connection()
+            rows = conn.execute(
+                """SELECT gene_id, tpm_value FROM patient_expression_timeseries
+                   WHERE patient_id = ? AND timepoint = (
+                       SELECT MAX(timepoint) FROM patient_expression_timeseries
+                       WHERE patient_id = ?
+                   )""",
+                (patient_id, patient_id),
+            ).fetchall()
+            conn.close()
+            expr_tfinal = {r["gene_id"]: r["tpm_value"] for r in rows} or expression
+
+        absorber, absorber_dtpm = find_absorber(hub, expr_t0, expr_tfinal)
+
+        result = ACOAResult(
+            hub_gene        = hub,
+            tau_points      = taus,
+            tpm_values      = tpms,
+            delta           = delta,
+            delta_r2        = delta_r2,
+            friction_index  = friction_index,
+            has_floor       = has_floor,
+            trigger         = trigger,
+            collapse_mode   = mode,
+            absorber_gene   = absorber,
+            absorber_delta_tpm = absorber_dtpm,
+            mode_description = COLLAPSE_MODES.get(mode, mode),
+        )
+        results.append(result)
+
+        delta_str = f"{delta:.3f}" if delta == delta else "N/A (snapshot)"
+        logger.info(
+            "[ACO-A] Hub=%-8s Mode=%-28s F=%.2f Δ=%s R²=%.2f Absorber=%s (+%.1f TPM)",
+            hub, mode, friction_index, delta_str, delta_r2, absorber, absorber_dtpm,
+        )
+
+    logger.info("[ACO-A] ACO-A analysis complete. %d hubs processed.", len(results))
+    return results
+
 # ── Master Orchestrator ───────────────────────────────────────────────────────
 
 def run_full_analysis(
@@ -757,6 +1098,15 @@ def run_full_analysis(
     orphans = run_level2_block_scanner(expression, already)
     report.orphan_anomalies = orphans
     logger.info("[PIPELINE] Level 2 complete. %d orphan anomalies.", len(orphans))
+
+    # Step 3b: ACO-A Analysis
+    logger.info("[PIPELINE] ── ACO-A ORBITAL COLLAPSE ANALYSIS ────────")
+    collapsed_hubs = [m for m in triage_matches if m.confirmed and m.expected_anomaly == "HUB_COLLAPSE"]
+    aco_results = run_aco_analysis(active_patient if False else patient_id, collapsed_hubs, expression)
+    report.aco_results = aco_results
+    logger.info("[PIPELINE] ACO-A complete. %d hubs analyzed, modes: %s",
+                len(aco_results),
+                [r.collapse_mode for r in aco_results])
 
     # Step 4: LLM Diagnosis
     logger.info("[PIPELINE] ── LLM DIAGNOSIS ──────────────────────────")
