@@ -136,3 +136,26 @@ This means adding 100 new patients adds 100 Level 1 queries (fast) and 100 × 24
 | 1,000 patients/day | Sequential Level 2 scanner | Kafka-partitioned chromosome workers |
 | 10,000 patients/day | LLM cost and latency | Model routing (Haiku vs Sonnet) |
 | 100,000 patients/day | Single DB write path | Federated PostgreSQL + K8s HPA |
+
+
+---
+
+## TCGA Corpus & 5-Event Wall (SNT v30)
+
+- **Corpus**: 2,746 pacientes TCGA (BRCA/LUAD/GBM/COAD) analizados via pipeline SNT
+- **Z-score mode**: gene-based (TPM individual vs baseline de cohorte, |Z|>2.5)
+- **5-Event Wall**: ≥5 anomalías hub simultáneas. Top candidatos:
+  - LUAD: `ATM|BRAF|BRCA2|PIK3CA|SMAD4` → 9 pacientes (1.5%)
+  - COAD: `APC|ATM|KRAS|PIK3CA|PTEN` → 8 pacientes (1.5%)
+  - BRCA: `BRCA2|BUB1|FANCD2|PLK1|RAD51` → 4 pacientes
+  - GBM: `BRCA1|BUB1|CHEK2|E2F1|TOP2A` → 2 pacientes
+- **F_bio**: promedio TPM de genes guardianes (TP53, BRCA1, BRCA2, MLH1, ATM, CHEK2, RAD51, FANCD2, RB1, PTEN) / 100
+- **ATM_UP**: hub universal sensor en contextos multi-evento (LUAD 12/29, COAD 8/18)
+- **Pipeline**: `genomic_agent/analysis/snt_pipeline.py`
+- **Resultados**: `genomic_agent/analysis/results/`
+
+### Dos modos Z-score
+| Modo | Flag | Uso | Fórmula |
+|------|------|-----|---------|
+| ratio (clínico) | `--mode ratio` | Paciente individual con CSV | Z = (TPM_sat/TPM_hub − μ_ratio) / σ_ratio |
+| gene (poblacional) | `--mode gene` | Análisis corpus TCGA | Z = (TPM_gene − μ_gene_cohorte) / σ_gene_cohorte |
