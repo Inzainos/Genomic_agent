@@ -150,7 +150,7 @@ def run_pipeline():
         anomalies = detect_anomalies(p, baseline)
         friction = compute_friction(p)
         patient_results.append({
-            'case_id': p['case_id'],
+            'case_id': _pseudo_id(p['case_id']),  # SECURITY: pseudonymized barcode
             'cohort': p['cohort'],
             'n_anomalies': len(anomalies),
             'anomalies': anomalies,
@@ -320,7 +320,7 @@ def save_to_sqlite(patient_results, wall):
     c.execute('DELETE FROM patient_anomalies')
     c.executemany(
         'INSERT INTO patient_anomalies VALUES (?,?,?,?,?)',
-        [(r['case_id'], r['cohort'], r['n_anomalies'],
+        [(_pseudo_id(r['case_id']), r['cohort'], r['n_anomalies'],  # SECURITY: pseudonymized
           json.dumps(r['anomalies']), r['friction'])
          for r in patient_results]
     )
