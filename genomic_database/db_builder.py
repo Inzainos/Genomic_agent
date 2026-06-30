@@ -313,9 +313,53 @@ def create_schema(conn: sqlite3.Connection) -> None:
         )
     """)
 
-    conn.commit()
-    logger.info("Schema created successfully (4 tables).")
+    # ── ACO-A: serie de tiempo para cálculo de Δ ─────────────────────────
+    logger.debug("Creating table: patient_expression_timeseries")
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS patient_expression_timeseries (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id  TEXT    NOT NULL,
+            gene_id     TEXT    NOT NULL,
+            timepoint   REAL    NOT NULL,  -- τ en unidades relativas (0 = extinción funcional del hub)
+            tpm_value   REAL    NOT NULL,
+            time_unit   TEXT    NOT NULL DEFAULT 'days',
+            loaded_at   TEXT    DEFAULT (datetime('now')),
+            UNIQUE(patient_id, gene_id, timepoint)
+        )
+    """)
 
+    conn.commit()
+    logger.info("Schema created successfully (5 tables: +patient_expression_timeseries for ACO-A Δ).")
+
+
+
+def seed_timeseries(conn: sqlite3.Connection) -> int:
+    """Seed ACO-A longitudinal demo data. Returns rows inserted."""
+    logger.info(
+        f"Seeding patient_expression_timeseries with {len(DEMO_TIMESERIES)} records..."
+    )
+    cursor = conn.cursor()
+    inserted = 0
+    for row in DEMO_TIMESERIES:
+        try:
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO patient_expression_timeseries
+                    (patient_id, gene_id, timepoint, tpm_value, time_unit)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                row,
+            )
+            if cursor.rowcount > 0:
+                inserted += 1
+                logger.debug(
+                    f"  [TIMESERIES] {row[0]} | {row[1]:<10} τ={row[2]:+.1f}d TPM={row[3]:.1f}"
+                )
+        except sqlite3.Error as exc:
+            logger.error(f"  [TIMESERIES] Insert failed for {row[:3]}: {exc}")
+    conn.commit()
+    logger.info(f"Timeseries seeding complete. Inserted {inserted} records.")
+    return inserted
 
 def seed_healing_patterns(conn: sqlite3.Connection) -> int:
     """Insert auto-healing ETL rules. Returns rows inserted."""
@@ -445,7 +489,7 @@ def verify_database(conn: sqlite3.Connection) -> None:
     logger.info("Running database verification...")
     cursor = conn.cursor()
 
-    tables = ["baseline_network_reference", "patient_expression", "disease_snt_signatures", "auto_healing_patterns"]
+    tables = ["baseline_network_reference", "patient_expression", "disease_snt_signatures", "auto_healing_patterns", "patient_expression_timeseries"]
     for table in tables:
         cursor.execute(f"SELECT COUNT(*) FROM {table}")
         count = cursor.fetchone()[0]
@@ -464,6 +508,41 @@ def verify_database(conn: sqlite3.Connection) -> None:
     logger.info(f"  ✓ Chromosomes in baseline: {', '.join(chroms)}")
 
     logger.info("Database verification passed.")
+
+
+
+# ── ACO-A Demo Timeseries ─────────────────────────────────────────────────────
+# Simulates 4 longitudinal biopsies for DEMO-PX-001 (TNBC progression)
+# timepoint τ: -30d (pre-collapse), 0 (functional extinction), +15d, +30d post
+# τ=0 anchored at TP53 functional extinction (TPM drops below 10% of healthy μ)
+DEMO_TIMESERIES: list[tuple] = [
+    # patient_id, gene_id, timepoint, tpm_value, time_unit
+    # ── TP53 (hub in HUB_COLLAPSE) — Regulated Orbital Decay (high friction: MMR active)
+    ("DEMO-PX-001", "TP53",    -30.0,  95.2, "days"),   # pre-collapse: near-healthy
+    ("DEMO-PX-001", "TP53",      0.0,  22.1, "days"),   # τ=0: functional extinction
+    ("DEMO-PX-001", "TP53",     15.0,   8.4, "days"),   # post: absorption phase
+    ("DEMO-PX-001", "TP53",     30.0,   3.1, "days"),   # late: power-law decay
+    # ── MYC (overactivated hub — LEAPFROG absorbing TP53 mass)
+    ("DEMO-PX-001", "MYC",    -30.0, 180.5, "days"),
+    ("DEMO-PX-001", "MYC",      0.0, 450.3, "days"),   # τ=0: peak absorption
+    ("DEMO-PX-001", "MYC",     15.0, 512.7, "days"),
+    ("DEMO-PX-001", "MYC",     30.0, 538.1, "days"),
+    # ── BRCA1 (gradual collapse, high friction: RAD51/FANCD2 still present)
+    ("DEMO-PX-001", "BRCA1",  -30.0, 110.3, "days"),
+    ("DEMO-PX-001", "BRCA1",    0.0,  30.4, "days"),
+    ("DEMO-PX-001", "BRCA1",   15.0,  14.2, "days"),
+    ("DEMO-PX-001", "BRCA1",   30.0,   6.8, "days"),
+    # ── CDKN1A (TP53 satellite — collapses with hub, no floor)
+    ("DEMO-PX-001", "CDKN1A", -30.0,  82.1, "days"),
+    ("DEMO-PX-001", "CDKN1A",   0.0,  18.4, "days"),
+    ("DEMO-PX-001", "CDKN1A",  15.0,   5.1, "days"),
+    ("DEMO-PX-001", "CDKN1A",  30.0,   1.2, "days"),   # → Catastrophic Cliff (no floor)
+    # ── PTEN (tumor suppressor — floor ~0, no friction)
+    ("DEMO-PX-001", "PTEN",   -30.0,  78.4, "days"),
+    ("DEMO-PX-001", "PTEN",     0.0,  15.2, "days"),
+    ("DEMO-PX-001", "PTEN",    15.0,   2.1, "days"),
+    ("DEMO-PX-001", "PTEN",    30.0,   0.3, "days"),   # → Catastrophic Cliff
+]
 
 
 def build_database() -> None:
@@ -485,6 +564,7 @@ def build_database() -> None:
         seed_baseline(conn)
         seed_disease_signatures(conn)
         seed_demo_patient(conn)
+        seed_timeseries(conn)
         seed_healing_patterns(conn)
         verify_database(conn)
 
