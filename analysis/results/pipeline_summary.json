@@ -1,0 +1,38 @@
+{
+  "BRCA": {
+    "n_patients": 1231,
+    "n_with_any_anomaly": 368,
+    "pct_with_anomaly": 29.9,
+    "n_multi_event_5plus": 26,
+    "pct_multi_event": 2.1,
+    "mean_friction": 0.1743,
+    "n_wall_candidates": 0
+  },
+  "LUAD": {
+    "n_patients": 600,
+    "n_with_any_anomaly": 188,
+    "pct_with_anomaly": 31.3,
+    "n_multi_event_5plus": 29,
+    "pct_multi_event": 4.8,
+    "mean_friction": 0.1432,
+    "n_wall_candidates": 0
+  },
+  "GBM": {
+    "n_patients": 391,
+    "n_with_any_anomaly": 134,
+    "pct_with_anomaly": 34.3,
+    "n_multi_event_5plus": 17,
+    "pct_multi_event": 4.3,
+    "mean_friction": 0.1611,
+    "n_wall_candidates": 0
+  },
+  "COAD": {
+    "n_patients": 524,
+    "n_with_any_anomaly": 165,
+    "pct_with_anomaly": 31.5,
+    "n_multi_event_5plus": 18,
+    "pct_multi_event": 3.4,
+    "mean_friction": 0.194,
+    "n_wall_candidates": 0
+  }
+}
