@@ -226,6 +226,51 @@ def notify_reporter_email(payload: EmailNotifyRequest) -> EmailNotifyResponse:
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
+@app.get("/tcga/wall_summary", tags=["TCGA"])
+async def tcga_wall_summary():
+    """
+    Returns top 5-Event Wall candidates per cohort from TCGA corpus (n=2,746).
+    Source: SNT genomic pipeline, Fractal Core Research 2026.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    _wall_paths = [
+        _Path("/data/five_event_wall_v2.json"),
+        _Path(__file__).parent.parent / "analysis" / "results" / "five_event_wall_v2.json",
+    ]
+    for _p in _wall_paths:
+        if _p.exists():
+            try:
+                data = _json.loads(_p.read_text())
+                # Return top 3 per cohort
+                summary = {}
+                for cohort, candidates in data.items():
+                    summary[cohort] = [
+                        {"combo": c[0], "n_patients": c[1], "pct": c[2]}
+                        for c in candidates[:3]
+                    ]
+                logger.info("[TCGA] wall_summary served from %s", _p)
+                return {"source": str(_p), "corpus_n": 2746, "cohorts": summary}
+            except Exception as e:
+                logger.error("[TCGA] Failed to load wall data: %s", e)
+                raise HTTPException(status_code=500, detail=f"Failed to load TCGA data: {e}")
+
+    # Fallback — hardcoded from TCGA analysis
+    logger.info("[TCGA] wall_summary served from hardcoded fallback")
+    return {
+        "source": "hardcoded_fallback",
+        "corpus_n": 2746,
+        "note": "Run snt_pipeline.py to generate five_event_wall_v2.json",
+        "cohorts": {
+            "LUAD": [{"combo": ["ATM_UP","BRAF_UP","BRCA2_UP","PIK3CA_UP","SMAD4_UP"], "n_patients": 9, "pct": 1.5}],
+            "COAD": [{"combo": ["APC_UP","ATM_UP","KRAS_UP","PIK3CA_UP","PTEN_UP"],    "n_patients": 8, "pct": 1.5}],
+            "BRCA": [{"combo": ["BRCA2_UP","BUB1_UP","FANCD2_UP","PLK1_UP","RAD51_UP"],"n_patients": 4, "pct": 0.3}],
+            "GBM":  [{"combo": ["BRCA1_UP","BUB1_UP","CHEK2_UP","E2F1_UP","TOP2A_UP"], "n_patients": 2, "pct": 0.5}],
+        },
+    }
+
+
 if __name__ == "__main__":
     logger.info("=" * 60)
     logger.info("SNT Mock Services starting on port 8081...")
