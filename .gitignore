@@ -29,10 +29,23 @@ pip-wheel-metadata/
 
 # Data volumes / pipeline output
 /data/
-analysis/results/*.json
 tcga_data/
 *.csv.gz
 *.tsv.gz
+
+# Pipeline result files (may contain pseudonymized patient records)
+# Regenerate with: python analysis/snt_pipeline.py
+analysis/results/*.json
+analysis/results/*.db
+analysis/results/patient_*.json
+analysis/results/patient_anomalies.json
+
+# Raw patient data / PHI — NEVER commit
+*.rnaseq.csv
+*_rnaseq.csv
+paciente_*.csv
+patient_*.csv
+*_expression.csv
 
 # Docker
 .docker/
