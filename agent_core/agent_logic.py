@@ -88,8 +88,12 @@ _DATA_DIR = _resolve_data_dir()
 _LOG_PATH = _DATA_DIR / "agent_core.log"
 
 # ── Logging ──────────────────────────────────────────────────────────────────
+# SECURITY: Never run DEBUG in production — exposes PHI in log files.
+# Set SNT_LOG_LEVEL=INFO (or WARNING) in .env / docker-compose.yml.
+_LOG_LEVEL = os.getenv("SNT_LOG_LEVEL", "INFO").upper()
+_EFFECTIVE_LEVEL = getattr(logging, _LOG_LEVEL, logging.INFO)
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=_EFFECTIVE_LEVEL,
     format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
@@ -98,6 +102,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger("SNT.AgentLogic")
 logger.info("[CONFIG] Data dir resolved to: %s", _DATA_DIR)
+
+def _log_pid(patient_id: str) -> str:
+    """Return a short pseudonymous alias for a patient_id safe to write in logs.
+    Uses first 8 hex chars of SHA-256. Irreversible — never reconstruct from logs.
+    SECURITY NOTE: Never log patient_id in plaintext; always call _log_pid() first.
+    """
+    import hashlib
+    return "PID-" + hashlib.sha256(patient_id.encode()).hexdigest()[:8]
 
 # ── Config from environment ───────────────────────────────────────────────────
 DB_PATH          = _resolve_db_path()
@@ -266,7 +278,7 @@ def _get_connection() -> sqlite3.Connection:
 
 def load_patient_expression(patient_id: str) -> dict[str, float]:
     """Return {gene_id: tpm_value} for the given patient."""
-    logger.info("[DB] Loading expression profile for patient '%s'.", patient_id)
+    logger.info("[DB] Loading expression profile for patient %s.", _log_pid(patient_id))
     conn = _get_connection()
     try:
         rows = conn.execute(
@@ -285,7 +297,7 @@ def ingest_csv_expression(patient_id: str, csv_data: str) -> int:
     Parse a CSV string (gene_id,tpm_value per line) and upsert into patient_expression.
     Returns the number of genes inserted/updated.
     """
-    logger.info("[DB] Ingesting CSV expression data for patient '%s'.", patient_id)
+    logger.info("[DB] Ingesting CSV expression data for patient %s.", _log_pid(patient_id))
     conn = _get_connection()
     inserted = 0
     try:
@@ -295,13 +307,13 @@ def ingest_csv_expression(patient_id: str, csv_data: str) -> int:
                 continue  # skip blank / header
             parts = line.split(",")
             if len(parts) < 2:
-                logger.warning("[DB] Line %d skipped (malformed): '%s'", line_no, line)
+                logger.warning("[DB] Line %d skipped (malformed): '%.40s…'", line_no, line[:40])
                 continue
             gene_id  = parts[0].strip().upper()
             try:
                 tpm_val = float(parts[1].strip())
             except ValueError:
-                logger.warning("[DB] Line %d skipped (bad TPM): '%s'", line_no, line)
+                logger.warning("[DB] Line %d skipped (bad TPM): '%.40s…'", line_no, line[:40])
                 continue
             conn.execute(
                 """
@@ -564,7 +576,12 @@ def _build_llm_prompt(
     orphan_anomalies: list[SNTAnomaly],
     aco_results: list["ACOAResult"] | None = None,
 ) -> str:
-    """Construct the structured medical prompt for Claude — includes ACO-A frame."""
+    """Construct the structured medical prompt for Claude — includes ACO-A frame.
+
+    SECURITY NOTE: This function embeds PHI (patient_id + clinical_notes) into
+    the prompt string. Never log the `prompt` variable directly. Log only
+    len(prompt) or a hash. Controlled by SNT_LOG_LEVEL=INFO in production.
+    """
     confirmed = [m for m in triage_matches if m.confirmed]
     tentative = [m for m in triage_matches if not m.confirmed]
 
@@ -651,7 +668,7 @@ def call_llm_for_diagnosis(
     Send the genomic analysis context to Claude via OpenRouter.
     Returns the model's medical diagnosis text.
     """
-    logger.info("[LLM] Building diagnosis prompt for patient '%s'.", patient_id)
+    logger.info("[LLM] Building diagnosis prompt for patient %s.", _log_pid(patient_id))
 
     if not OPENROUTER_KEY:
         logger.warning("[LLM] OPENROUTER_API_KEY not set. Returning stub diagnosis.")
@@ -1058,7 +1075,7 @@ def run_full_analysis(
     t_start = time.time()
 
     logger.info("=" * 70)
-    logger.info("[PIPELINE] Starting SNT Analysis | Patient: %s", patient_id)
+    logger.info("[PIPELINE] Starting SNT Analysis | Patient: %s", _log_pid(patient_id))
     logger.info("=" * 70)
 
     # Step 0: Guardrails
