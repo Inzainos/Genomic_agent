@@ -124,7 +124,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-tab_analysis, tab_etl, tab_about, tab_logs = st.tabs(
+tab_analysis, tab_etl, tab_wall, tab_about, tab_logs = st.tabs(
     ["🔬 Analysis", "🧹 ETL Sanitizer", "ℹ️ About SNT", "📋 Logs"]
 )
 
@@ -448,6 +448,124 @@ with tab_etl:
 # ─────────────────────────────────────────────────────────────────────────────
 # TAB 3 — ABOUT
 # ─────────────────────────────────────────────────────────────────────────────
+with tab_wall:
+    st.subheader("🧬 5-Event Wall — TCGA Corpus (n=2,746)")
+    st.markdown(
+        "Combinaciones de **≥5 anomalías hub simultáneas** (|Z|>2.5 vs baseline de cohorte) "
+        "encontradas empíricamente en el corpus TCGA. El muro emerge de los datos — "
+        "no está definido a priori."
+    )
+
+    import json as _json
+    from pathlib import Path as _Path
+
+    # Intentar cargar resultados TCGA
+    _wall_paths = [
+        _Path("/data/five_event_wall_v2.json"),
+        _Path(__file__).parent.parent / "analysis" / "results" / "five_event_wall_v2.json",
+        _Path(__file__).parent.parent.parent / "tcga_results" / "five_event_wall_v2.json",
+    ]
+    _wall_data = None
+    for _p in _wall_paths:
+        if _p.exists():
+            try:
+                _wall_data = _json.loads(_p.read_text())
+                break
+            except Exception:
+                pass
+
+    # Métricas globales
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Pacientes", "2,746")
+    col2.metric("% con ≥1 Anomalía", "~31%")
+    col3.metric("% con ≥5 Eventos", "2–5%")
+    col4.metric("Cohortes", "BRCA · LUAD · GBM · COAD")
+
+    st.divider()
+
+    _COHORT_INTERP = {
+        "BRCA": (
+            "**Checkpoint mitótico co-activado** (BUB1, PLK1, AURKB). "
+            "Reparación DNA compensatoria (BRCA2, FANCD2, RAD51). "
+            "Patrón: estrés de replicación + override mitótico."
+        ),
+        "LUAD": (
+            "**ATM como hub universal saturado.** Co-activación oncogénica (BRAF, PIK3CA) "
+            "+ pérdida de supresores (PTEN, SMAD4). "
+            "Perfil de colapso multi-dominio — señal pre-invasiva candidata."
+        ),
+        "GBM": (
+            "**Colapso de checkpoints DNA** (BRCA1, CHEK2) + replicación descontrolada "
+            "(E2F1, TOP2A, BUB1). Posible perfil de catástrofe replicativa."
+        ),
+        "COAD": (
+            "**APC como guardián WNT central.** Convergencia RAS-MAPK (KRAS) + "
+            "PI3K (PIK3CA, PTEN) + sensor DNA (ATM). "
+            "Oncogénesis colorrectal clásica + capa de inestabilidad DNA."
+        ),
+    }
+
+    if _wall_data:
+        _cohort = st.selectbox("Cohorte", ["LUAD", "COAD", "BRCA", "GBM"])
+        _candidates = _wall_data.get(_cohort, [])
+
+        if _candidates:
+            st.markdown(f"**Interpretación SNT — {_cohort}:** {_COHORT_INTERP.get(_cohort, '')}")
+            st.markdown(f"**{len(_candidates)} combinaciones de 5 eventos encontradas:**")
+
+            import pandas as _pd
+            _rows = []
+            for combo, n_patients, pct in _candidates[:20]:
+                _rows.append({
+                    "Combinación (5 genes hub)": " | ".join(combo),
+                    "N Pacientes": n_patients,
+                    "% Cohorte": f"{pct}%",
+                })
+            _df = _pd.DataFrame(_rows)
+            st.dataframe(_df, use_container_width=True, hide_index=True)
+
+            # Top combo detalle
+            if _candidates:
+                top_combo, top_n, top_pct = _candidates[0]
+                st.info(
+                    f"**Top combo — {_cohort}:** `{'  |  '.join(top_combo)}` "
+                    f"→ {top_n} pacientes ({top_pct}%)"
+                )
+        else:
+            st.warning(f"Sin candidatos para {_cohort} con el umbral actual.")
+    else:
+        st.info(
+            "Resultados TCGA no disponibles en este entorno. "
+            "Ejecuta `genomic_agent/analysis/snt_pipeline.py` para generar "
+            "`five_event_wall_v2.json` y colócalo en `genomic_agent/analysis/results/`."
+        )
+        # Mostrar los hallazgos hardcodeados como fallback
+        st.subheader("Hallazgos TCGA (hardcoded, corpus n=2,746)")
+        _static = {
+            "LUAD": [
+                (["ATM_UP","BRAF_UP","BRCA2_UP","PIK3CA_UP","SMAD4_UP"], 9, 1.5),
+                (["ATM_UP","BRAF_UP","BRCA2_UP","PTEN_UP","SMAD4_UP"],   9, 1.5),
+                (["ATM_UP","BRAF_UP","PIK3CA_UP","PTEN_UP","SMAD4_UP"],  9, 1.5),
+            ],
+            "COAD": [
+                (["APC_UP","ATM_UP","KRAS_UP","PIK3CA_UP","PTEN_UP"],    8, 1.5),
+                (["APC_UP","ATM_UP","BRAF_UP","KRAS_UP","PIK3CA_UP"],    7, 1.3),
+            ],
+            "BRCA": [
+                (["BRCA2_UP","BUB1_UP","FANCD2_UP","PLK1_UP","RAD51_UP"],4, 0.3),
+                (["AURKB_UP","BRCA2_UP","BUB1_UP","FANCD2_UP","PLK1_UP"],4, 0.3),
+            ],
+            "GBM": [
+                (["BRCA1_UP","BUB1_UP","CHEK2_UP","E2F1_UP","TOP2A_UP"], 2, 0.5),
+            ],
+        }
+        for cohort_name, combos in _static.items():
+            st.markdown(f"**{cohort_name}** — {_COHORT_INTERP.get(cohort_name, '')}")
+            for combo, n, pct in combos:
+                st.markdown(f"- `{'  |  '.join(combo)}` → {n} pacientes ({pct}%)")
+            st.markdown("")
+
+
 with tab_about:
     st.markdown("""
 ## 🧬 SNT — Shadow Node Theory (Genomic Module)
