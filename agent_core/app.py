@@ -110,7 +110,7 @@ with st.sidebar:
         st.markdown("ETL Rules: ⚠️  Error")
 
     st.markdown("---")
-    st.caption("SNT Genomic Analyzer v1.0 | MIT License")
+    st.caption("SNT Genomic Analyzer v2.5.0 · Corpus v5 · MIT License")
 
 
 # ── Header ────────────────────────────────────────────────────────────────────
@@ -118,7 +118,7 @@ st.markdown("""
 <div class="snt-header">
     <h1 style="margin:0; font-size:2rem;">🧬 SNT Genomic Topologic Analyzer</h1>
     <p style="margin:0.4rem 0 0; opacity:0.8; font-size:1rem;">
-        Satellite-Node Topology · Two-Level Scanning · ETL Auto-Healing · Claude 3.5 Sonnet
+        Satellite-Node Topology · Two-Level Scanning · ETL Auto-Healing · SNT v2.5.0
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -410,12 +410,29 @@ with tab_etl:
 # ─────────────────────────────────────────────────────────────────────────────
 with tab_about:
     st.markdown("""
-## 🧬 SNT Analysis — Core Concepts
+## 🧬 SNT — Shadow Node Theory (Genomic Module)
+
+This application is the genomic implementation of the **Shadow Node Theory (SNT) v2.5.0**,
+a universal framework for detecting structural collapse in complex systems through
+hub-satellite topological analysis.
+
+### Published Research
+
+- **Preprint (SSRN):** [Shadow Node Theory — SSRN 6418778](https://ssrn.com/abstract=6418778)
+- **Repository:** [github.com/Inzainos/The-shadow-Node-Theory](https://github.com/Inzainos/The-shadow-Node-Theory)
+- **Zenodo:** [10.5281/zenodo.19446521](https://doi.org/10.5281/zenodo.19446521)
+- **Corpus:** v5 · n=721 real cases · 89.3% statistically significant (p=2.5×10⁻⁹⁷)
+
+### SNT Core Hypothesis
+
+> When a master regulator (hub) loses control of its downstream genes (satellites),
+> that loss of control **is** the collapse signal — detectable before structural mutations.
 
 | Approach | Traditional Genomics | SNT Topology |
 |---|---|---|
 | Unit of analysis | Individual mutations | Hub-satellite relationships |
 | What it detects | "Wrong letter in code" | "Who stopped controlling whom" |
+| Corpus validated | N/A | n=721, ρ=−0.68, p=2.5×10⁻⁹⁷ |
 | Novel discovery | Limited to known variants | Orphan anomaly detection |
 
 ### Anomaly Types
@@ -424,12 +441,13 @@ with tab_about:
 
 **🔵 SATELLITE CAPTURE** — Free gene drawn into hub dependency. Z << -2.5. Tumour suppressor reprogramming.
 
-**🔴 HUB COLLAPSE** — Master regulator loses control of its regulon. TP53 / BRCA1 / RB1 inactivation.
+**🔴 HUB COLLAPSE** — Master regulator loses global control of its regulon. TP53 / BRCA1 / RB1 inactivation.
 
 ### Z-Score Formula
 ```
 Z = (R_patient - μ_healthy) / σ_healthy
 R = TPM(satellite) / TPM(hub)    |    Threshold: |Z| > 2.5
+Corpus: n=721 · n_sig=644 (89.3%) · Spearman ρ=−0.678 · p=2.50×10⁻⁹⁷
 ```
 
 ### ETL Auto-Healing Pipeline
