@@ -1,6 +1,13 @@
 """
 agent_logic.py — SNT Genomic Topologic Analyzer Core Engine
 ============================================================
+Genomic implementation of the Shadow Node Theory (SNT) v2.5.0.
+
+Base theory  : Shadow Node Theory · https://github.com/Inzainos/The-shadow-Node-Theory
+SSRN preprint: https://ssrn.com/abstract=6418778
+Zenodo       : https://doi.org/10.5281/zenodo.19446521
+Corpus       : v5 · n=721 real cases · 89.3% sig · ρ=−0.678 · p=2.50×10⁻⁹⁷
+
 Implements the Two-Level Scanning Architecture:
 
   Level 1 (Clinical Triage)  : Fast O(K) cross-reference against
@@ -13,7 +20,7 @@ Z-Score formula:
     where R = TPM(satellite) / TPM(hub)
     Anomaly threshold: |Z| > 2.5
 
-Author  : SNT Genomic Analyzer Team
+Author  : SNT Genomic Analyzer Team · Fractal Core Research
 License : MIT
 """
 
@@ -587,7 +594,7 @@ def call_llm_for_diagnosis(
         "Authorization":  f"Bearer {OPENROUTER_KEY}",
         "Content-Type":   "application/json",
         "HTTP-Referer":   "https://snt-genomic-agent.local",
-        "X-Title":        "SNT Genomic Topologic Analyzer",
+        "X-Title":        "SNT Genomic Topologic Analyzer v2.5.0",
     }
 
     logger.info("[LLM] Sending request to OpenRouter model '%s'.", LLM_MODEL)
