@@ -154,6 +154,32 @@ DISEASE_SNT_SIGNATURES = [
     ("Pancreatic_PDAC",             "KRAS",   "ERK1",    "SATELLITE_CAPTURE", "chr12", 0.91),
     ("Pancreatic_PDAC",             "CDKN2A", "CDK4",    "HUB_COLLAPSE",      "chr9",  0.87),
     ("Pancreatic_PDAC",             "SMAD4",  "TGFb2",   "HUB_COLLAPSE",      "chr18", 0.84),
+
+    # ── TCGA 5-Event Wall — Empirical (n=2,746 patients, |Z|>2.5, Fractal Core Research 2026) ──
+    # LUAD: ATM as universal hub sensor — co-activation with oncogenic axis
+    ("LUAD_5EW_ATM_hub",            "ATM",   "BRAF",    "LEAPFROG",          "chr11", 0.91),
+    ("LUAD_5EW_ATM_hub",            "ATM",   "BRCA2",   "LEAPFROG",          "chr11", 0.89),
+    ("LUAD_5EW_ATM_hub",            "ATM",   "PIK3CA",  "LEAPFROG",          "chr11", 0.87),
+    ("LUAD_5EW_multipath",          "BRAF",  "SMAD4",   "HUB_COLLAPSE",      "chr7",  0.85),
+    ("LUAD_5EW_multipath",          "BRAF",  "PTEN",    "HUB_COLLAPSE",      "chr7",  0.83),
+    # COAD: APC as WNT gatekeeper hub — co-events in RAS-MAPK + PI3K + DNA sensor
+    ("COAD_5EW_APC_hub",            "APC",   "KRAS",    "HUB_COLLAPSE",      "chr5",  0.92),
+    ("COAD_5EW_APC_hub",            "APC",   "BRAF",    "HUB_COLLAPSE",      "chr5",  0.89),
+    ("COAD_5EW_APC_hub",            "APC",   "PTEN",    "HUB_COLLAPSE",      "chr5",  0.87),
+    ("COAD_5EW_multipath",          "ATM",   "PIK3CA",  "LEAPFROG",          "chr11", 0.85),
+    ("COAD_5EW_multipath",          "KRAS",  "PIK3CA",  "SATELLITE_CAPTURE", "chr12", 0.83),
+    # BRCA: mitotic checkpoint co-activation + DNA repair compensatory overexpression
+    ("BRCA_5EW_mitotic",            "BUB1",  "PLK1",    "LEAPFROG",          "chr2",  0.90),
+    ("BRCA_5EW_mitotic",            "AURKB", "PLK1",    "LEAPFROG",          "chr17", 0.88),
+    ("BRCA_5EW_dna_repair",         "BRCA2", "BUB1",    "LEAPFROG",          "chr13", 0.86),
+    ("BRCA_5EW_dna_repair",         "BRCA2", "FANCD2",  "LEAPFROG",          "chr13", 0.84),
+    ("BRCA_5EW_dna_repair",         "BRCA2", "RAD51",   "LEAPFROG",          "chr13", 0.82),
+    # GBM: DNA repair checkpoint collapse + replication factor overactivation
+    ("GBM_5EW_checkpoint",          "BRCA1", "CHEK2",   "HUB_COLLAPSE",      "chr17", 0.83),
+    ("GBM_5EW_checkpoint",          "BUB1",  "E2F1",    "LEAPFROG",          "chr2",  0.81),
+    ("GBM_5EW_replication",         "BRAF",  "BRCA2",   "LEAPFROG",          "chr7",  0.79),
+    ("GBM_5EW_replication",         "PLK1",  "RAD51",   "LEAPFROG",          "chr16", 0.78),
+
     # Li-Fraumeni Syndrome (germline TP53)
     ("Li_Fraumeni_Syndrome",        "TP53",   "BAX",     "HUB_COLLAPSE",      "chr17", 0.96),
     ("Li_Fraumeni_Syndrome",        "TP53",   "PUMA",    "HUB_COLLAPSE",      "chr17", 0.94),
