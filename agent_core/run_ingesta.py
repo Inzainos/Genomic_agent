@@ -363,6 +363,15 @@ def _build_parser() -> argparse.ArgumentParser:
                         help="Export analysis report as JSON")
     parser.add_argument("--z-threshold", type=float, default=2.5,
                         help="Z-Score anomaly threshold (default: 2.5)")
+    parser.add_argument(
+        "--mode", choices=["ratio", "gene"], default="ratio",
+        help=(
+            "Z-score mode: 'ratio' = clinical individual "
+            "(TPM_sat/TPM_hub vs healthy baseline, Level-1/Level-2); "
+            "'gene' = population TCGA (TPM_gene vs cohort baseline, "
+            "5-Event Wall). Default: ratio."
+        ),
+    )
 
     return parser
 
