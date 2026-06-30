@@ -117,8 +117,26 @@ def _random_id(prefix: str, length: int = 6) -> str:
     return f"{prefix}-{suffix}"
 
 
+# SECURITY: PHI fields (patient_id, clinical content) are redacted before logging.
+_PHI_FIELDS = {'patient_id', 'to', 'body', 'summary', 'text', 'subject', 'description'}
+_SAFE_HEADERS = {'content-type', 'content-length', 'host', 'user-agent', 'accept'}
+
+def _redact_phi(payload: Any) -> dict:
+    """Mask PHI keys and truncate large string values before logging."""
+    d = payload if isinstance(payload, dict) else (payload.dict() if hasattr(payload, 'dict') else {})
+    redacted = {}
+    for k, v in d.items():
+        if k in _PHI_FIELDS:
+            redacted[k] = '[REDACTED]'
+        elif isinstance(v, str) and len(v) > 60:
+            redacted[k] = v[:60] + '…'
+        else:
+            redacted[k] = v
+    return redacted
+
+
 def _log_request(service: str, payload: Any) -> None:
-    logger.info("[%s] Incoming request: %s", service, payload)
+    logger.info("[%s] Incoming request: %s", service, _redact_phi(payload))
 
 
 def _simulate_latency(service: str, min_ms: int = 80, max_ms: int = 400) -> None:
@@ -131,11 +149,12 @@ def _simulate_latency(service: str, min_ms: int = 80, max_ms: int = 400) -> None
 
 @app.middleware("http")
 async def log_all_requests(request: Request, call_next):
+    safe_headers = {k: v for k, v in request.headers.items() if k.lower() in _SAFE_HEADERS}
     logger.debug(
         "[HTTP] %s %s | Headers: %s",
         request.method,
         request.url.path,
-        dict(request.headers),
+        safe_headers,  # SECURITY: only safe headers logged — Authorization excluded
     )
     response = await call_next(request)
     logger.debug("[HTTP] Response status: %d", response.status_code)
