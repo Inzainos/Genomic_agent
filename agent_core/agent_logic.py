@@ -1119,7 +1119,7 @@ def run_full_analysis(
     # Step 3b: ACO-A Analysis
     logger.info("[PIPELINE] ── ACO-A ORBITAL COLLAPSE ANALYSIS ────────")
     collapsed_hubs = [m for m in triage_matches if m.confirmed and m.expected_anomaly == "HUB_COLLAPSE"]
-    aco_results = run_aco_analysis(active_patient if False else patient_id, collapsed_hubs, expression)
+    aco_results = run_aco_analysis(patient_id, collapsed_hubs, expression)
     report.aco_results = aco_results
     logger.info("[PIPELINE] ACO-A complete. %d hubs analyzed, modes: %s",
                 len(aco_results),
