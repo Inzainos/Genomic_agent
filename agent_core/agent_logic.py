@@ -608,14 +608,14 @@ def _build_llm_prompt(
         lines = []
         for a in aco_results:
             delta_str = f"{a.delta:.3f} (R²={a.delta_r2:.2f})" if a.delta == a.delta else "N/A"
-            lines.append(
+            line = (
                 f"  - Hub={a.hub_gene} | Mode={a.collapse_mode} | "
                 f"Δ={delta_str} | F={a.friction_index:.2f} | "
                 f"Trigger={a.trigger} | Floor={'yes' if a.has_floor else 'no'} | "
-                f"Absorber={a.absorber_gene} (+{a.absorber_delta_tpm:.1f} TPM)
-"
+                f"Absorber={a.absorber_gene} (+{a.absorber_delta_tpm:.1f} TPM)\n"
                 f"    → {a.mode_description}"
             )
+            lines.append(line)
         aco_text = "\n".join(lines)
 
     return f"""You are a senior clinical geneticist specialising in functional genomics and 

@@ -5,6 +5,8 @@ WORKDIR /app
 # System dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sqlite3 \
+    socat \
+    bubblewrap \
     && rm -rf /var/lib/apt/lists/*
 
 # Python dependencies (cached layer)

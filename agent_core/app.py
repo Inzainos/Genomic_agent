@@ -125,7 +125,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 tab_analysis, tab_etl, tab_wall, tab_about, tab_logs = st.tabs(
-    ["🔬 Analysis", "🧹 ETL Sanitizer", "ℹ️ About SNT", "📋 Logs"]
+    [
+        "🔬 Analysis",
+        "🧹 ETL Sanitizer",
+        "🧪 5-Event Wall",
+        "ℹ️ About SNT",
+        "📋 Logs",
+    ]
 )
 
 
@@ -446,7 +452,7 @@ with tab_etl:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 3 — ABOUT
+# TAB 3 — 5-EVENT WALL
 # ─────────────────────────────────────────────────────────────────────────────
 with tab_wall:
     st.subheader("🧬 5-Event Wall — TCGA Corpus (n=2,746)")

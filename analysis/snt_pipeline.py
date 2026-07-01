@@ -10,6 +10,7 @@ Pipeline SNT completo sobre corpus TCGA.
 import gzip
 import csv
 import json
+import hashlib
 import logging
 import sqlite3
 from pathlib import Path
@@ -73,6 +74,12 @@ def load_cohort(cohort: str) -> list[dict]:
         patients.append({'case_id': case_id, 'cohort': cohort, 'genes': genes})
     log.info(f"[{cohort}] Cargados {len(patients)} pacientes")
     return patients
+
+
+def _pseudo_id(case_id: str) -> str:
+    """Generate a stable pseudonymized identifier from the original case ID."""
+    digest = hashlib.sha256(case_id.encode('utf-8')).hexdigest()
+    return f"pseudo-{digest[:16]}"
 
 
 # ── ESTADÍSTICAS BASELINE ────────────────────────────────────────────────────
