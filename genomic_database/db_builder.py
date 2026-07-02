@@ -56,69 +56,74 @@ logger = logging.getLogger("SNT.DBBuilder")
 # ── Constants ────────────────────────────────────────────────────────────────
 DB_PATH = _resolve_db_path()
 
-# ── Synthetic reference data ─────────────────────────────────────────────────
-# Calibrated to biological realism: MYC regulon + additional hubs
-# mean_ratio = TPM(satellite) / TPM(hub) in healthy tissue
-# std_dev_ratio = standard deviation across healthy cohort (n=500)
+# ── Empirical reference data — healthy breast tissue ─────────────────────────
+# mean_ratio    = mean of R = TPM(satellite) / TPM(hub) across a healthy cohort
+#                 (same ratio the scanner computes per patient);
+# std_dev_ratio = population std of that ratio (floored at 5% of the mean).
+# Derived from n=40 TCGA-BRCA "Solid Tissue Normal" (normal-adjacent) RNA-seq
+# samples (STAR-Counts, tpm_unstranded) via the NIH GDC public API.
+# See analysis/baseline_derivation/ for the derivation script and provenance.
+# The single NRAS→PI3K pair retains a synthetic value (PI3K is a pathway/gene
+# family, not a single HGNC symbol, so it cannot be resolved in the TSV).
 
 BASELINE_NETWORK = [
     # hub_gene,   satellite_gene,  mean_ratio, std_dev_ratio, chromosome
-    ("MYC",       "CDK4",          0.82,        0.09,          "chr8"),
-    ("MYC",       "E2F1",          0.75,        0.11,          "chr8"),
-    ("MYC",       "CCND1",         0.68,        0.08,          "chr8"),
-    ("MYC",       "MCM2",          0.91,        0.07,          "chr8"),
-    ("MYC",       "MCM7",          0.88,        0.10,          "chr8"),
-    ("MYC",       "PCNA",          0.79,        0.06,          "chr8"),
-    ("MYC",       "TOP2A",         0.64,        0.12,          "chr8"),
-    ("MYC",       "AURKB",         0.71,        0.09,          "chr8"),
-    ("MYC",       "BUB1",          0.55,        0.13,          "chr8"),
-    ("MYC",       "PLK1",          0.66,        0.10,          "chr8"),
+    ("MYC",       "CDK4",        0.3867,     0.2195,       "chr8"),
+    ("MYC",       "E2F1",        0.0476,     0.0311,       "chr8"),
+    ("MYC",       "CCND1",       1.5908,     1.4986,       "chr8"),
+    ("MYC",       "MCM2",        0.0684,     0.0325,       "chr8"),
+    ("MYC",       "MCM7",        0.5291,     0.2816,       "chr8"),
+    ("MYC",       "PCNA",        1.0856,     0.5936,       "chr8"),
+    ("MYC",       "TOP2A",       0.0925,     0.1401,       "chr8"),
+    ("MYC",       "AURKB",       0.0211,     0.0193,       "chr8"),
+    ("MYC",       "BUB1",        0.0159,     0.0145,       "chr8"),
+    ("MYC",       "PLK1",        0.0174,     0.0131,       "chr8"),
     # TP53 regulon
-    ("TP53",      "CDKN1A",        1.12,        0.14,          "chr17"),
-    ("TP53",      "MDM2",          0.43,        0.08,          "chr17"),
-    ("TP53",      "BAX",           0.58,        0.09,          "chr17"),
-    ("TP53",      "PUMA",          0.49,        0.11,          "chr17"),
-    ("TP53",      "GADD45A",       0.37,        0.07,          "chr17"),
-    ("TP53",      "TIGAR",         0.31,        0.06,          "chr17"),
-    ("TP53",      "DDB2",          0.44,        0.08,          "chr17"),
-    ("TP53",      "SESN1",         0.52,        0.10,          "chr17"),
+    ("TP53",      "CDKN1A",      4.3226,     4.8878,       "chr17"),
+    ("TP53",      "MDM2",        0.4362,     0.3254,       "chr17"),
+    ("TP53",      "BAX",         0.6222,     0.222,        "chr17"),
+    ("TP53",      "PUMA",        0.1175,     0.0646,       "chr17"),
+    ("TP53",      "GADD45A",     1.416,      1.3275,       "chr17"),
+    ("TP53",      "TIGAR",       0.0577,     0.0415,       "chr17"),
+    ("TP53",      "DDB2",        0.5188,     0.1337,       "chr17"),
+    ("TP53",      "SESN1",       1.264,      2.8766,       "chr17"),
     # BRCA1 regulon
-    ("BRCA1",     "RAD51",         0.77,        0.12,          "chr17"),
-    ("BRCA1",     "FANCD2",        0.61,        0.09,          "chr17"),
-    ("BRCA1",     "RPA1",          0.83,        0.08,          "chr17"),
-    ("BRCA1",     "RFC1",          0.70,        0.11,          "chr17"),
+    ("BRCA1",     "RAD51",       0.5411,     0.1932,       "chr17"),
+    ("BRCA1",     "FANCD2",      0.879,      0.3288,       "chr17"),
+    ("BRCA1",     "RPA1",        18.8988,    5.8493,       "chr17"),
+    ("BRCA1",     "RFC1",        11.3046,    3.1212,       "chr17"),
     # EGFR regulon
-    ("EGFR",      "GRB2",          0.95,        0.07,          "chr7"),
-    ("EGFR",      "SOS1",          0.87,        0.09,          "chr7"),
-    ("EGFR",      "PIK3CA",        0.74,        0.13,          "chr7"),
-    ("EGFR",      "AKT1",          0.81,        0.10,          "chr7"),
-    ("EGFR",      "STAT3",         0.66,        0.08,          "chr7"),
-    ("EGFR",      "ERK2",          0.90,        0.07,          "chr7"),
+    ("EGFR",      "GRB2",        2.0703,     0.8599,       "chr7"),
+    ("EGFR",      "SOS1",        0.7069,     0.2279,       "chr7"),
+    ("EGFR",      "PIK3CA",      0.2153,     0.0694,       "chr7"),
+    ("EGFR",      "AKT1",        0.5523,     0.2182,       "chr7"),
+    ("EGFR",      "STAT3",       2.1193,     0.8766,       "chr7"),
+    ("EGFR",      "ERK2",        1.7737,     0.5524,       "chr7"),
     # PIK3CA regulon (chr3)
-    ("PIK3CA",    "MTOR",          0.59,        0.11,          "chr3"),
-    ("PIK3CA",    "AKT1",          0.88,        0.08,          "chr3"),
-    ("PIK3CA",    "S6K1",          0.63,        0.09,          "chr3"),
-    ("PIK3CA",    "4EBP1",         0.71,        0.12,          "chr3"),
+    ("PIK3CA",    "MTOR",        2.3484,     0.8328,       "chr3"),
+    ("PIK3CA",    "AKT1",        2.7632,     1.3337,       "chr3"),
+    ("PIK3CA",    "S6K1",        1.823,      0.4729,       "chr3"),
+    ("PIK3CA",    "4EBP1",       7.4626,     5.821,        "chr3"),
     # Additional chromosomal coverage for Level-2 block scanner
-    ("KRAS",      "RAF1",          0.76,        0.10,          "chr12"),
-    ("KRAS",      "MEK1",          0.82,        0.08,          "chr12"),
-    ("KRAS",      "ERK1",          0.69,        0.11,          "chr12"),
-    ("NRAS",      "RAF1",          0.73,        0.09,          "chr1"),
-    ("NRAS",      "PI3K",          0.67,        0.12,          "chr1"),
-    ("BRAF",      "MEK1",          0.85,        0.07,          "chr7"),
-    ("BRAF",      "MEK2",          0.80,        0.09,          "chr7"),
-    ("PTEN",      "AKT1",          0.38,        0.06,          "chr10"),
-    ("PTEN",      "MTOR",          0.29,        0.05,          "chr10"),
-    ("RB1",       "E2F1",          0.52,        0.08,          "chr13"),
-    ("RB1",       "CCND1",         0.45,        0.07,          "chr13"),
-    ("VHL",       "HIF1A",         0.34,        0.06,          "chr3"),
-    ("VHL",       "VEGFA",         0.41,        0.09,          "chr3"),
-    ("CDKN2A",    "CDK4",          0.22,        0.04,          "chr9"),
-    ("CDKN2A",    "CDK6",          0.19,        0.03,          "chr9"),
-    ("APC",       "CTNNB1",        0.48,        0.08,          "chr5"),
-    ("APC",       "TCF4",          0.55,        0.10,          "chr5"),
-    ("SMAD4",     "TGFb1",         0.63,        0.11,          "chr18"),
-    ("SMAD4",     "TGFb2",         0.58,        0.09,          "chr18"),
+    ("KRAS",      "RAF1",        1.2588,     0.7142,       "chr12"),
+    ("KRAS",      "MEK1",        2.8108,     1.3451,       "chr12"),
+    ("KRAS",      "ERK1",        4.466,      1.7973,       "chr12"),
+    ("NRAS",      "RAF1",        0.5571,     0.5665,       "chr1"),
+    ("NRAS",      "PI3K",        0.67,       0.12,         "chr1"),  # synthetic (PI3K = pathway, not a single gene)
+    ("BRAF",      "MEK1",        8.4672,     5.0665,       "chr7"),
+    ("BRAF",      "MEK2",        8.0629,     5.5846,       "chr7"),
+    ("PTEN",      "AKT1",        0.6047,     0.2341,       "chr10"),
+    ("PTEN",      "MTOR",        0.5393,     0.2902,       "chr10"),
+    ("RB1",       "E2F1",        0.1542,     0.1076,       "chr13"),
+    ("RB1",       "CCND1",       4.3527,     2.4879,       "chr13"),
+    ("VHL",       "HIF1A",       2.5523,     0.8837,       "chr3"),
+    ("VHL",       "VEGFA",       0.6451,     0.4469,       "chr3"),
+    ("CDKN2A",    "CDK4",        33.6911,    64.6066,      "chr9"),
+    ("CDKN2A",    "CDK6",        11.3661,    15.1154,      "chr9"),
+    ("APC",       "CTNNB1",      12.8712,    5.9081,       "chr5"),
+    ("APC",       "TCF4",        1.156,      0.4239,       "chr5"),
+    ("SMAD4",     "TGFb1",       1.499,      0.8211,       "chr18"),
+    ("SMAD4",     "TGFb2",       0.4732,     0.2487,       "chr18"),
 ]
 
 # ── Disease SNT Signatures (Clinical Oracle) ──────────────────────────────────

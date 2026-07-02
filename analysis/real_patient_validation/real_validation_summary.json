@@ -8,174 +8,76 @@
   "level1_confirmed": [
     {
       "disease": "Breast_Cancer_Basal_TNBC",
-      "hub": "TP53",
-      "satellite": "CDKN1A",
-      "z_score": 34.9811,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Breast_Cancer_Basal_TNBC",
       "hub": "BRCA1",
       "satellite": "RAD51",
-      "z_score": 7.1706,
+      "z_score": 5.6386,
       "expected_anomaly": "SATELLITE_CAPTURE"
     },
     {
       "disease": "Lung_Adenocarcinoma",
       "hub": "EGFR",
       "satellite": "STAT3",
-      "z_score": 434.7417,
+      "z_score": 38.0105,
       "expected_anomaly": "LEAPFROG"
-    },
-    {
-      "disease": "Lung_Adenocarcinoma",
-      "hub": "TP53",
-      "satellite": "MDM2",
-      "z_score": 4.6862,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Colorectal_Cancer",
-      "hub": "APC",
-      "satellite": "CTNNB1",
-      "z_score": 149.398,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Colorectal_Cancer",
-      "hub": "KRAS",
-      "satellite": "MEK1",
-      "z_score": 8.7855,
-      "expected_anomaly": "SATELLITE_CAPTURE"
     },
     {
       "disease": "Colorectal_Cancer",
       "hub": "SMAD4",
       "satellite": "TGFb1",
-      "z_score": 43.3019,
+      "z_score": 4.7427,
       "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Melanoma_BRAF_V600E",
-      "hub": "BRAF",
-      "satellite": "MEK1",
-      "z_score": 93.9248,
-      "expected_anomaly": "SATELLITE_CAPTURE"
-    },
-    {
-      "disease": "Melanoma_BRAF_V600E",
-      "hub": "BRAF",
-      "satellite": "MEK2",
-      "z_score": 85.385,
-      "expected_anomaly": "SATELLITE_CAPTURE"
     },
     {
       "disease": "Melanoma_BRAF_V600E",
       "hub": "PTEN",
       "satellite": "AKT1",
-      "z_score": 17.847,
+      "z_score": 3.6144,
       "expected_anomaly": "HUB_COLLAPSE"
     },
     {
       "disease": "Glioblastoma_GBM",
       "hub": "EGFR",
       "satellite": "PIK3CA",
-      "z_score": 10.5877,
+      "z_score": 27.3934,
       "expected_anomaly": "SATELLITE_CAPTURE"
-    },
-    {
-      "disease": "Glioblastoma_GBM",
-      "hub": "PTEN",
-      "satellite": "MTOR",
-      "z_score": 7.566,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Glioblastoma_GBM",
-      "hub": "RB1",
-      "satellite": "CCND1",
-      "z_score": 134.731,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Renal_Cell_Carcinoma",
-      "hub": "VHL",
-      "satellite": "HIF1A",
-      "z_score": 34.8009,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Renal_Cell_Carcinoma",
-      "hub": "VHL",
-      "satellite": "VEGFA",
-      "z_score": 4.3753,
-      "expected_anomaly": "HUB_COLLAPSE"
     },
     {
       "disease": "Renal_Cell_Carcinoma",
       "hub": "PTEN",
       "satellite": "AKT1",
-      "z_score": 17.847,
+      "z_score": 3.6144,
       "expected_anomaly": "LEAPFROG"
-    },
-    {
-      "disease": "Pancreatic_PDAC",
-      "hub": "KRAS",
-      "satellite": "ERK1",
-      "z_score": 26.5484,
-      "expected_anomaly": "SATELLITE_CAPTURE"
-    },
-    {
-      "disease": "Pancreatic_PDAC",
-      "hub": "CDKN2A",
-      "satellite": "CDK4",
-      "z_score": 318.4193,
-      "expected_anomaly": "HUB_COLLAPSE"
-    },
-    {
-      "disease": "Pancreatic_PDAC",
-      "hub": "SMAD4",
-      "satellite": "TGFb2",
-      "z_score": -2.9077,
-      "expected_anomaly": "HUB_COLLAPSE"
     },
     {
       "disease": "Li_Fraumeni_Syndrome",
       "hub": "TP53",
       "satellite": "BAX",
-      "z_score": 19.0076,
+      "z_score": 7.5157,
       "expected_anomaly": "HUB_COLLAPSE"
     },
     {
       "disease": "Li_Fraumeni_Syndrome",
       "hub": "TP53",
       "satellite": "PUMA",
-      "z_score": 2.787,
+      "z_score": 10.5119,
       "expected_anomaly": "HUB_COLLAPSE"
     },
     {
       "disease": "HBOC_BRCA1_Syndrome",
       "hub": "BRCA1",
       "satellite": "FANCD2",
-      "z_score": 17.2965,
+      "z_score": 3.9163,
       "expected_anomaly": "HUB_COLLAPSE"
     },
     {
       "disease": "HBOC_BRCA1_Syndrome",
       "hub": "BRCA1",
       "satellite": "RAD51",
-      "z_score": 7.1706,
+      "z_score": 5.6386,
       "expected_anomaly": "HUB_COLLAPSE"
     }
   ],
   "level2_orphan_anomalies": [
-    {
-      "chromosome": "chr1",
-      "hub": "NRAS",
-      "satellite": "RAF1",
-      "z_score": -4.5803,
-      "type": "SATELLITE_CAPTURE"
-    },
     {
       "chromosome": "chr1",
       "hub": "NRAS",
@@ -184,176 +86,99 @@
       "type": "SATELLITE_CAPTURE"
     },
     {
-      "chromosome": "chr17",
-      "hub": "TP53",
-      "satellite": "GADD45A",
-      "z_score": 16.6001,
+      "chromosome": "chr13",
+      "hub": "RB1",
+      "satellite": "E2F1",
+      "z_score": 3.3807,
       "type": "LEAPFROG"
-    },
-    {
-      "chromosome": "chr17",
-      "hub": "TP53",
-      "satellite": "TIGAR",
-      "z_score": -3.0669,
-      "type": "SATELLITE_CAPTURE"
     },
     {
       "chromosome": "chr17",
       "hub": "TP53",
       "satellite": "DDB2",
-      "z_score": 5.412,
-      "type": "LEAPFROG"
-    },
-    {
-      "chromosome": "chr17",
-      "hub": "BRCA1",
-      "satellite": "RPA1",
-      "z_score": 134.2132,
-      "type": "LEAPFROG"
-    },
-    {
-      "chromosome": "chr17",
-      "hub": "BRCA1",
-      "satellite": "RFC1",
-      "z_score": 81.7432,
-      "type": "LEAPFROG"
-    },
-    {
-      "chromosome": "chr3",
-      "hub": "PIK3CA",
-      "satellite": "MTOR",
-      "z_score": 20.1885,
+      "z_score": 2.6489,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr3",
       "hub": "PIK3CA",
       "satellite": "AKT1",
-      "z_score": 65.2735,
+      "z_score": 2.5033,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr3",
       "hub": "PIK3CA",
       "satellite": "S6K1",
-      "z_score": 30.067,
-      "type": "LEAPFROG"
-    },
-    {
-      "chromosome": "chr3",
-      "hub": "PIK3CA",
-      "satellite": "4EBP1",
-      "z_score": 34.1245,
+      "z_score": 3.1995,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr7",
       "hub": "EGFR",
       "satellite": "GRB2",
-      "z_score": 843.0795,
+      "z_score": 67.3279,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr7",
       "hub": "EGFR",
       "satellite": "SOS1",
-      "z_score": 46.3773,
+      "z_score": 19.0305,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr7",
       "hub": "EGFR",
       "satellite": "AKT1",
-      "z_score": 121.0403,
+      "z_score": 56.6532,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr7",
       "hub": "EGFR",
       "satellite": "ERK2",
-      "z_score": 223.1805,
+      "z_score": 26.6997,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr8",
       "hub": "MYC",
       "satellite": "E2F1",
-      "z_score": -5.1065,
-      "type": "SATELLITE_CAPTURE"
-    },
-    {
-      "chromosome": "chr8",
-      "hub": "MYC",
-      "satellite": "CCND1",
-      "z_score": 36.3998,
+      "z_score": 4.5237,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr8",
       "hub": "MYC",
-      "satellite": "MCM2",
-      "z_score": -11.115,
-      "type": "SATELLITE_CAPTURE"
-    },
-    {
-      "chromosome": "chr8",
-      "hub": "MYC",
-      "satellite": "PCNA",
-      "z_score": 17.3222,
+      "satellite": "TOP2A",
+      "z_score": 2.9392,
       "type": "LEAPFROG"
     },
     {
       "chromosome": "chr8",
       "hub": "MYC",
       "satellite": "AURKB",
-      "z_score": -6.8446,
-      "type": "SATELLITE_CAPTURE"
+      "z_score": 3.7767,
+      "type": "LEAPFROG"
     },
     {
       "chromosome": "chr8",
       "hub": "MYC",
       "satellite": "BUB1",
-      "z_score": -3.4716,
-      "type": "SATELLITE_CAPTURE"
+      "z_score": 5.7098,
+      "type": "LEAPFROG"
     },
     {
       "chromosome": "chr8",
       "hub": "MYC",
       "satellite": "PLK1",
-      "z_score": -5.4694,
-      "type": "SATELLITE_CAPTURE"
-    },
-    {
-      "chromosome": "chr9",
-      "hub": "CDKN2A",
-      "satellite": "CDK6",
-      "z_score": 23.3767,
+      "z_score": 7.302,
       "type": "LEAPFROG"
     }
   ],
   "aco_a_results": [
     {
-      "hub": "TP53",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "TP53",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "APC",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
       "hub": "SMAD4",
       "collapse_mode": "Floor_Arrested",
       "friction_index": 0.11179539999999999,
@@ -362,48 +187,6 @@
     },
     {
       "hub": "PTEN",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "PTEN",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "RB1",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "VHL",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "VHL",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "CDKN2A",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "SMAD4",
       "collapse_mode": "Cracquelure_Decay",
       "friction_index": 0.11179539999999999,
       "delta": null,
@@ -418,6 +201,13 @@
     },
     {
       "hub": "TP53",
+      "collapse_mode": "Floor_Arrested",
+      "friction_index": 0.11179539999999999,
+      "delta": null,
+      "absorber_gene": "unknown"
+    },
+    {
+      "hub": "BRCA1",
       "collapse_mode": "Cracquelure_Decay",
       "friction_index": 0.11179539999999999,
       "delta": null,
@@ -425,14 +215,7 @@
     },
     {
       "hub": "BRCA1",
-      "collapse_mode": "Floor_Arrested",
-      "friction_index": 0.11179539999999999,
-      "delta": null,
-      "absorber_gene": "unknown"
-    },
-    {
-      "hub": "BRCA1",
-      "collapse_mode": "Floor_Arrested",
+      "collapse_mode": "Catastrophic_Cliff",
       "friction_index": 0.11179539999999999,
       "delta": null,
       "absorber_gene": "unknown"

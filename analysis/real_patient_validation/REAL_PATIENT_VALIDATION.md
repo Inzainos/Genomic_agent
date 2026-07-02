@@ -47,20 +47,28 @@ SNT_DB_PATH=/tmp/snt_real_validation.db python run_real_validation.py
 
 ## 3. Results
 
-| Stage | Result |
-|---|---|
-| Genes loaded | 59/60 (98.3%) |
-| Level 1 signatures evaluated | 25 |
-| Level 1 confirmed (\|Z\|>2.5) | 23 |
-| Level 2 orphan anomalies | 23 |
-| ACO-A hubs processed | 15 |
-| Exceptions raised | 0 |
+Results are shown against the **empirical** healthy-tissue baseline (see §5),
+which superseded the original synthetic reference.
+
+| Stage | Empirical baseline | (was, synthetic baseline) |
+|---|---|---|
+| Genes loaded | 59/60 (98.3%) | 59/60 |
+| Level 1 signatures evaluated | 25 | 25 |
+| Level 1 confirmed (\|Z\|>2.5) | 10 | 23 |
+| Level 2 orphan anomalies | 14 | 23 |
+| ACO-A hubs processed | 6 | 15 |
+| Exceptions raised | 0 | 0 |
 
 Full per-match detail: `real_validation_summary.json`.
 
 The pipeline ran to completion with no exceptions across all three stages,
 confirming the scanning/classification code path is correct against a real
-RNA-seq profile, not just against the hand-crafted synthetic demo case.
+RNA-seq profile, not just against the hand-crafted synthetic demo case. With
+the empirical baseline in place the scanner is markedly more selective —
+confirmed matches fell from 23 to 10 and orphan anomalies from 23 to 14 — and
+Z-scores moved into a biologically plausible range (e.g. `TP53→BAX` Z=+7.5
+rather than +19, `EGFR→STAT3` Z=+38 rather than +435). The large Z-scores that
+remain reflect genuine tumor dysregulation in this real breast-cancer sample.
 
 ## 4. Gene recovery notes
 
@@ -84,30 +92,32 @@ alias mapping (the SNT panel uses informal pathway names in a few spots):
 HGNC gene symbol; its catalytic subunit `PIK3CA` is already a separate,
 correctly-mapped entry in the panel.
 
-## 5. Caveat: baseline reference is synthetic, patient data is real
+## 5. Baseline reference: now empirical
 
-This validation confirms the **pipeline logic** runs correctly end-to-end on
-real biological input. It does **not** validate the **baseline reference
-network** (`BASELINE_NETWORK` in `db_builder.py`), which remains a
-hand-calibrated, illustrative healthy-tissue reference (not derived from a
-real healthy cohort). Because the reference standard deviations are narrow
-(calibrated for the synthetic demo profile) and one real tumor sample carries
-substantially more biological variance, most hub-satellite ratios triggered
-very large \|Z\| values (e.g. `EGFR→STAT3` Z=+434.7). This is an expected
-consequence of comparing a real tumor sample against an illustrative rather
-than empirically-derived healthy baseline — it is not a pipeline defect, and
-the same caveat would apply to any real patient run against the current
-`BASELINE_NETWORK`. A future improvement would be deriving
-`baseline_network_reference` from real TCGA-GTEx healthy-tissue controls,
-analogous to how `disease_snt_signatures` was already upgraded with the
-2,746-patient 5-Event-Wall empirical signatures.
+The original `BASELINE_NETWORK` (healthy-tissue reference in `db_builder.py`)
+was a hand-calibrated, illustrative reference with artificially narrow standard
+deviations, so almost every hub-satellite ratio in a real tumor triggered very
+large \|Z\| values (e.g. `EGFR→STAT3` Z=+434.7). That reference has now been
+**replaced with values derived from n=40 real healthy breast-tissue samples**
+(TCGA-BRCA "Solid Tissue Normal", via the NIH GDC API) — see
+`analysis/baseline_derivation/`. For each pair the reference is
+`mean ± std` of R = TPM(satellite)/TPM(hub) across the healthy cohort, using
+the same ratio the scanner computes per patient. Only the `NRAS→PI3K` pair
+remains synthetic (PI3K is a pathway/family label, not a single HGNC symbol).
+
+With the empirical baseline the scanner became appropriately selective on this
+real patient (confirmed 23→10, orphans 23→14) and Z-scores dropped to a
+biologically plausible range. This closes the caveat noted in the original
+validation: both the patient data **and** the healthy baseline are now real.
 
 ## 6. Conclusion
 
 The SNT Genomic Topologic Analyzer's Two-Level Scanning Architecture (clinical
 triage + deep block scanner) and ACO-A collapse-mode classifier execute
-correctly against genuine, open-access TCGA patient data, with no code
-changes required. The synthetic `DEMO-PX-001` case remains useful as a
-hand-designed illustrative example; this real-patient run is the first
-confirmation that the same code path handles real-world RNA-seq input
-without failure.
+correctly against genuine, open-access TCGA patient data, evaluated against a
+healthy-tissue baseline that is itself derived from real TCGA normal-adjacent
+samples — no synthetic reference data remains in the scoring path (save the one
+unresolvable PI3K pair). The synthetic `DEMO-PX-001` case remains useful as a
+hand-designed illustrative example; this real-patient run against a real
+baseline is the first confirmation that the full scoring path produces
+biologically sensible results on real-world RNA-seq input.
