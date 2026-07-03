@@ -1,0 +1,147 @@
+{
+  "round": 2,
+  "n_patients": 8,
+  "data_source": "NIH GDC API (TCGA-BRCA Primary Tumor, open-access, de-identified)",
+  "baseline": "empirical (n=40 TCGA-BRCA normal-adjacent)",
+  "confirmed_mean": 5.5,
+  "orphans_mean": 13.75,
+  "aco_mean": 2.5,
+  "patients": [
+    {
+      "case": "TCGA-AC-A62X",
+      "genes": 58,
+      "confirmed": 8,
+      "orphans": 15,
+      "aco_hubs": 4,
+      "diseases": [
+        "Breast_Cancer_Basal_TNBC",
+        "Colorectal_Cancer",
+        "Glioblastoma_GBM",
+        "HBOC_BRCA1_Syndrome",
+        "Li_Fraumeni_Syndrome",
+        "Lung_Adenocarcinoma",
+        "Renal_Cell_Carcinoma"
+      ],
+      "collapse_modes": [
+        "Catastrophic_Cliff",
+        "Floor_Arrested"
+      ]
+    },
+    {
+      "case": "TCGA-AN-A0FN",
+      "genes": 58,
+      "confirmed": 7,
+      "orphans": 14,
+      "aco_hubs": 3,
+      "diseases": [
+        "Breast_Cancer_Basal_TNBC",
+        "Colorectal_Cancer",
+        "Glioblastoma_GBM",
+        "HBOC_BRCA1_Syndrome",
+        "Lung_Adenocarcinoma",
+        "Pancreatic_PDAC"
+      ],
+      "collapse_modes": [
+        "Catastrophic_Cliff",
+        "Floor_Arrested"
+      ]
+    },
+    {
+      "case": "TCGA-AR-A0TU",
+      "genes": 58,
+      "confirmed": 5,
+      "orphans": 18,
+      "aco_hubs": 2,
+      "diseases": [
+        "Breast_Cancer_Basal_TNBC",
+        "Glioblastoma_GBM",
+        "HBOC_BRCA1_Syndrome",
+        "Lung_Adenocarcinoma"
+      ],
+      "collapse_modes": [
+        "Catastrophic_Cliff"
+      ]
+    },
+    {
+      "case": "TCGA-BH-A18M",
+      "genes": 58,
+      "confirmed": 2,
+      "orphans": 12,
+      "aco_hubs": 0,
+      "diseases": [
+        "Glioblastoma_GBM",
+        "Lung_Adenocarcinoma"
+      ],
+      "collapse_modes": []
+    },
+    {
+      "case": "TCGA-D8-A1XO",
+      "genes": 58,
+      "confirmed": 4,
+      "orphans": 14,
+      "aco_hubs": 1,
+      "diseases": [
+        "Breast_Cancer_Basal_TNBC",
+        "Glioblastoma_GBM",
+        "Lung_Adenocarcinoma",
+        "Pancreatic_PDAC"
+      ],
+      "collapse_modes": [
+        "Floor_Arrested"
+      ]
+    },
+    {
+      "case": "TCGA-E2-A14U",
+      "genes": 58,
+      "confirmed": 4,
+      "orphans": 7,
+      "aco_hubs": 2,
+      "diseases": [
+        "Li_Fraumeni_Syndrome",
+        "Lung_Adenocarcinoma",
+        "Melanoma_BRAF_V600E",
+        "Renal_Cell_Carcinoma"
+      ],
+      "collapse_modes": [
+        "Floor_Arrested"
+      ]
+    },
+    {
+      "case": "TCGA-E2-A15T",
+      "genes": 58,
+      "confirmed": 7,
+      "orphans": 18,
+      "aco_hubs": 4,
+      "diseases": [
+        "Glioblastoma_GBM",
+        "Li_Fraumeni_Syndrome",
+        "Lung_Adenocarcinoma",
+        "Melanoma_BRAF_V600E",
+        "Renal_Cell_Carcinoma"
+      ],
+      "collapse_modes": [
+        "Cracquelure_Decay",
+        "Floor_Arrested"
+      ]
+    },
+    {
+      "case": "TCGA-E9-A1R3",
+      "genes": 58,
+      "confirmed": 7,
+      "orphans": 12,
+      "aco_hubs": 4,
+      "diseases": [
+        "Breast_Cancer_Basal_TNBC",
+        "Glioblastoma_GBM",
+        "Li_Fraumeni_Syndrome",
+        "Lung_Adenocarcinoma",
+        "Pancreatic_PDAC"
+      ],
+      "collapse_modes": [
+        "Cracquelure_Decay",
+        "Floor_Arrested"
+      ]
+    }
+  ],
+  "exceptions": 0
+}
