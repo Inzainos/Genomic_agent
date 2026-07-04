@@ -1,0 +1,19 @@
+{
+  "n_patients": 976,
+  "n_errors": 0,
+  "confirmed_mean": 7.49,
+  "confirmed_median": 7.0,
+  "orphans_mean": 14.79,
+  "aco_mean": 3.86,
+  "disease_freq": {
+    "Glioblastoma_GBM": 870,
+    "Lung_Adenocarcinoma": 842,
+    "Breast_Cancer_Basal_TNBC": 814,
+    "HBOC_BRCA1_Syndrome": 609,
+    "Renal_Cell_Carcinoma": 604,
+    "Melanoma_BRAF_V600E": 571,
+    "Li_Fraumeni_Syndrome": 561,
+    "Colorectal_Cancer": 502,
+    "Pancreatic_PDAC": 226
+  }
+}
