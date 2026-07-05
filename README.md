@@ -106,8 +106,8 @@ Output: novel topological anomalies — potential new biomarkers or undescribed 
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-org/snt-genomic-analyzer.git
-cd snt-genomic-analyzer
+git clone https://github.com/Inzainos/The-shadow-Node-Theory.git
+cd The-shadow-Node-Theory/genomic_agent
 
 # 2. Configure
 cp .env.example .env
