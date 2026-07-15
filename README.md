@@ -79,6 +79,12 @@ where R = TPM(satellite) / TPM(hub)
 
 Pairs with |Z| > 2.5 are confirmed. Output: ranked list of matching diseases with confidence scores.
 
+> **Empirical healthy baseline.** `μ_healthy` / `σ_healthy` are **not** synthetic:
+> the reference network (`db_builder.BASELINE_NETWORK`) is derived from **n=40
+> real TCGA-BRCA normal-adjacent RNA-seq samples** (50/51 hub-satellite pairs;
+> only the unresolvable `NRAS→PI3K` pair remains synthetic). Derivation script
+> and provenance in `analysis/baseline_derivation/`.
+
 ### Level 2 — Deep Block Scanner (background)
 
 Iterates chromosome by chromosome. For each block:
@@ -99,6 +105,25 @@ Output: novel topological anomalies — potential new biomarkers or undescribed 
 | **LEAPFROG** | Satellite decouples upward — activates independent pathways | Z >> +2.5 |
 | **SATELLITE_CAPTURE** | Free gene drawn into hub dependency abnormally | Z << -2.5 |
 | **HUB_COLLAPSE** | Master regulator loses control of its entire regulon | Hub TPM collapse |
+
+---
+
+## Real-Data Validation
+
+The pipeline has been validated end-to-end against **genuine, open-access TCGA
+patient data** (NIH GDC API, de-identified), evaluated against the empirical
+healthy baseline — no synthetic patient data in the scoring path:
+
+| Round | Cohort | Result |
+|---|---|---|
+| 1 | `TCGA-BH-A18H` (1 case) | Level 1→2→ACO-A run clean; 10 confirmed / 14 orphan |
+| 2 | 8 TCGA-BRCA tumors | 0 exceptions; means 5.5 confirmed / 13.75 orphan / 2.5 ACO-A hubs |
+| Scale | **976 TCGA-BRCA tumors** (full cohort) | **976/976, 0 exceptions**; stable, discriminant distributions |
+
+Scripts, per-patient counts (no raw TPM/PHI), provenance, and reports live in
+`analysis/real_patient_validation/` (`round2/`, `scale_976/`). The disease
+oracle's 5-Event-Wall signatures are themselves derived from a 2,746-patient
+TCGA batch analysis (`analysis/TCGA_SNT_ANALYSIS.md`).
 
 ---
 
