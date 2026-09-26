@@ -50,8 +50,9 @@ When a master regulator (hub) loses control of its downstream genes (satellites)
 
 **`/genomic_database`** — The SNT Storage Layer
 - SQLite with 3 tables: healthy tissue reference network, patient RNA-seq expression, clinical disease oracle
-- Seeded with biologically calibrated data (MYC regulon, TP53 regulon, BRCA1, EGFR, PIK3CA, and 8 more hubs across 10 chromosomes)
-- 9 disease signatures covering TNBC, Lung Adenocarcinoma, Colorectal Cancer, Melanoma, GBM, Renal Cell Carcinoma, PDAC, Li-Fraumeni Syndrome, HBOC
+- Healthy reference network (`BASELINE_NETWORK`): **51 hub-satellite pairs, 14 hubs across 11 chromosomes** (MYC, TP53, BRCA1, EGFR, PIK3CA, KRAS, BRAF, NRAS, PTEN, RB1, APC, SMAD4, CDKN2A, VHL); **50/51 derived from n=40 real TCGA-BRCA normal-adjacent samples**, only `NRAS→PI3K` remains synthetic
+- Disease oracle (`DISEASE_SNT_SIGNATURES`): **44 signature rows spanning 17 disease entries** — 7 solid tumors (TNBC, Lung Adenocarcinoma, Colorectal Cancer, Melanoma BRAF V600E, GBM, Renal Cell Carcinoma, PDAC), 2 hereditary syndromes (Li-Fraumeni, HBOC) and 8 empirical TCGA "5-Event Wall" signatures (BRCA ×2, LUAD ×2, GBM ×2, COAD ×2)
+- Alternate oracle `hpa_db_builder.py` (HPA/UniProt) additionally models HUB_OVERACTIVATION
 
 **`/mock_services`** — Hospital Integration Layer (FastAPI :8081)
 - `/jira/create_ticket` — Simulates Jira issue creation with realistic latency
@@ -193,14 +194,24 @@ snt-genomic-analyzer/
 ├── genomic_database/
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   └── db_builder.py           # Schema + synthetic data seeder
+│   ├── db_builder.py           # Schema + empirical baseline (n=40 TCGA) + disease oracle (active)
+│   └── hpa_db_builder.py       # Alternate HPA/UniProt oracle (adds HUB_OVERACTIVATION)
 ├── mock_services/
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   └── mock_main.py            # FastAPI mock integrations
-└── agent_core/
-    ├── Dockerfile
-    ├── requirements.txt
-    ├── agent_logic.py          # SNT math engine + LLM + notifications
-    └── app.py                  # Streamlit multimodal UI
+├── agent_core/
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── agent_logic.py          # SNT math engine + LLM + notifications
+│   ├── app.py                  # Streamlit multimodal UI
+│   ├── data_sanitizer.py       # ETL heuristic sanitizer for raw RNA-seq (gene IDs, duplicates, TPM ranges)
+│   └── run_ingesta.py          # Batch ingestion & load-test automation
+└── analysis/
+    ├── TCGA_SNT_ANALYSIS.md    # 5-Event-Wall corpus report (2,746 patients; BRCA/LUAD/GBM/COAD)
+    ├── snt_pipeline.py         # TCGA batch Z-score pipeline
+    ├── tcga_download_compress.py
+    ├── results/                # Aggregated pipeline outputs (no raw PHI)
+    ├── baseline_derivation/    # Empirical BASELINE_NETWORK from n=40 healthy TCGA samples
+    └── real_patient_validation/ # Round 1 (TCGA-BH-A18H) + round2/ (8 patients) + scale_976/ (976 patients)
 ```

@@ -120,7 +120,7 @@ The log format used in the current stack (`%(asctime)s | %(levelname)-8s | %(nam
 
 Unlike conventional diagnostic pipelines that scale linearly with genome size, the SNT Two-Level Architecture has a key **sub-linear scaling property**:
 
-- Level 1 complexity is **O(K)** — it does not grow with genome size, only with the number of known diseases (currently 25 signatures across 9 diseases, a set that grows slowly)
+- Level 1 complexity is **O(K)** — it does not grow with genome size, only with the number of known diseases (currently 44 signature rows across 17 disease entries, a set that grows slowly)
 - Level 2 complexity is **O(chromosomes × avg_pairs_per_chromosome)** — it is bounded and predictable; each chromosome block is processed independently and discarded
 
 This means adding 100 new patients adds 100 Level 1 queries (fast) and 100 × 24 chromosome jobs (parallelisable). The system never loads the full genome for any single patient into RAM.
