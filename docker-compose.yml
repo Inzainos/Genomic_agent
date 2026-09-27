@@ -48,7 +48,7 @@ services:
       dockerfile: Dockerfile
     container_name: snt_mock_services
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     volumes:
       - snt_data:/data
     networks:
