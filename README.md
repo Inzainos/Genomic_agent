@@ -131,9 +131,11 @@ TCGA batch analysis (`analysis/TCGA_SNT_ANALYSIS.md`).
 ## Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/Inzainos/The-shadow-Node-Theory.git
-cd The-shadow-Node-Theory/genomic_agent
+# 1. Clone (o copia local desde /home/deamon/genomic_agent)
+# Remote GitHub pendiente de crear por el operador; el historial completo
+# (45 commits) se preservó desde The-shadow-Node-Theory con git subtree split
+# el 2026-10-20.
+cd genomic_agent
 
 # 2. Configure
 cp .env.example .env
