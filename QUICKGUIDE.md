@@ -13,11 +13,12 @@ Levanta el sistema completo en 5 minutos. Sin Python, sin pip, sin dependencias 
 ## Paso 1 — Clonar
 
 ```bash
-git clone https://github.com/Inzainos/The-shadow-Node-Theory.git
-cd The-shadow-Node-Theory/genomic_agent
+# Proyecto independiente desde 2026-10-20 (historial preservado, 45 commits).
+# Remote GitHub pendiente de crear por el operador.
+cd genomic_agent
 ```
 
-> Rama activa: `genomic-agent-v3`
+> Rama activa: `main` (la antigua `genomic-agent-v3` quedó fusionada en main del repo SNT el 2026-10-20 — todos sus fixes de seguridad ya están aquí)
 > ```bash
 > git checkout genomic-agent-v3
 > ```
