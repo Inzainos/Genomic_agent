@@ -4,6 +4,20 @@ Cronológico, inverso. Todo lo listado fue **medido corriendo**, no leído.
 
 ---
 
+## 2026-10-26 — Regla 8: satélite ausente del panel no se cuenta como TPM cero
+
+### Fixed
+- **`sat_tpm = expression.get(sat, 0.0)` eliminado** en Level 1 (`run_level1_triage`) y Level 2 (`run_level2_block_scanner`). Un gen satélite ausente del panel del paciente se convertía en TPM 0 "medido" → Z falso muy negativo → confirmaba `SATELLITE_CAPTURE` (o orphan en L2) sin dato real. Medido: 8/25 firmas y 16/51 pares del baseline disparaban falso con el satélite ausente (p. ej. "Glioblastoma_GBM Z=-3.102" solo por faltar PIK3CA).
+- Ahora `sat_tpm = expression.get(sat)`; si es `None` se omite con `WARNING` ("faltante != cero medido"). TPM=0 real sigue computándose normalmente.
+- El hub ya tenía guard (`hub_tpm <= 0 → skip`); no se toca.
+
+### Verificación (medida, no leída)
+- Panel sano sin PIK3CA → 0 falsos (antes 1: GBM Z=-3.102).
+- Expresión sana → 1/25 confirmadas (banda 0-3 esperada).
+- CDK4 ×12 → TNBC `MYC→CDK4` confirmada Z=+19.379, tier intacto.
+- PIK3CA=0 medido → computado (no omitido).
+- Servicios `snt_agent_core`/`snt_mock_services` healthy (loopback 127.0.0.1:8501/:8081, HTTP 200).
+
 ## 2026-10-25 — Alineación con SNT v2.7.1 (tela de incertidumbre) + 3 bugs
 
 ### Alineación con el marco (SNT v2.7.1 / marco v34)

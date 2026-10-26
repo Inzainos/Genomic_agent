@@ -438,7 +438,14 @@ def run_level1_triage(
             else "CURATED_LITERATURE"
 
         hub_tpm = expression.get(hub, 0.0)
-        sat_tpm = expression.get(sat, 0.0)
+        sat_tpm = expression.get(sat)
+
+        if sat_tpm is None:
+            logger.warning(
+                "[LEVEL-1] Satélite %s ausente del panel — omitiendo %s→%s (faltante != cero medido).",
+                sat, hub, sat,
+            )
+            continue
 
         if hub_tpm <= 0:
             logger.debug(
@@ -529,7 +536,14 @@ def run_level2_block_scanner(
                 continue
 
             hub_tpm = expression.get(hub, 0.0)
-            sat_tpm = expression.get(sat, 0.0)
+            sat_tpm = expression.get(sat)
+
+            if sat_tpm is None:
+                logger.warning(
+                    "[LEVEL-2] Satélite %s ausente del panel — omitiendo %s→%s (faltante != cero medido).",
+                    sat, hub, sat,
+                )
+                continue
 
             if hub_tpm <= 0:
                 continue
