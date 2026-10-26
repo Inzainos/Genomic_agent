@@ -5,6 +5,8 @@
 # Environment & secrets
 .env
 *.env
+.env.fractal
+.env.*
 !.env.example
 
 # Python

@@ -78,7 +78,7 @@ Z = (R_patient - μ_healthy) / σ_healthy
 where R = TPM(satellite) / TPM(hub)
 ```
 
-Pairs with |Z| > 2.5 are confirmed. Output: ranked list of matching diseases with confidence scores.
+Pairs with |Z| > 2.5 are confirmed. Output: ranked list of matching diseases by measured |Z|, each labelled with its **evidence tier** (`EMPIRICAL_5EVENT` = signature derived from the 2,746-patient TCGA 5-Event-Wall batch; `CURATED_LITERATURE` = curated from literature without cohort calibration). No invented confidence percentages (SNT v2.7.1 honesty rule).
 
 > **Empirical healthy baseline.** `μ_healthy` / `σ_healthy` are **not** synthetic:
 > the reference network (`db_builder.BASELINE_NETWORK`) is derived from **n=40

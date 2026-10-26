@@ -196,9 +196,10 @@ class TriageMatch:
     satellite_gene:   str
     chromosome:       str
     expected_anomaly: str
-    confidence_score: float
+    confidence_score: float   # legacy DB column; NOT a calibrated probability
     detected_z_score: float
     confirmed:        bool   # True when patient data confirms the signature
+    evidence_tier:    str = "CURATED_LITERATURE"  # SNT v2.7.1: honest evidence
 
 
 @dataclass
@@ -433,6 +434,8 @@ def run_level1_triage(
         expected = sig["expected_anomaly"]
         chrom    = sig["chromosome"]
         conf     = sig["confidence_score"]
+        tier     = sig["evidence_tier"] if "evidence_tier" in sig.keys() \
+            else "CURATED_LITERATURE"
 
         hub_tpm = expression.get(hub, 0.0)
         sat_tpm = expression.get(sat, 0.0)
@@ -472,6 +475,7 @@ def run_level1_triage(
             confidence_score=conf,
             detected_z_score=round(z, 4),
             confirmed=confirmed,
+            evidence_tier=tier,
         )
         matches.append(match)
 
@@ -587,7 +591,7 @@ def _build_llm_prompt(
 
     confirmed_text = "\n".join(
         f"  - {m.disease_name} (Hub: {m.hub_gene} → Sat: {m.satellite_gene}, "
-        f"Z={m.detected_z_score:+.3f}, Conf: {m.confidence_score:.0%})"
+        f"Z={m.detected_z_score:+.3f}, evidence: {m.evidence_tier})"
         for m in confirmed
     ) or "  None."
 
@@ -610,7 +614,8 @@ def _build_llm_prompt(
             delta_str = f"{a.delta:.3f} (R²={a.delta_r2:.2f})" if a.delta == a.delta else "N/A"
             line = (
                 f"  - Hub={a.hub_gene} | Mode={a.collapse_mode} | "
-                f"Δ={delta_str} | F={a.friction_index:.2f} | "
+                f"Δ={delta_str} | F={a.friction_index:.2f} "
+                f"(φ proxy, umbral de diseño 0.5, no calibrado) | "
                 f"Trigger={a.trigger} | Floor={'yes' if a.has_floor else 'no'} | "
                 f"Absorber={a.absorber_gene} (+{a.absorber_delta_tpm:.1f} TPM)\n"
                 f"    → {a.mode_description}"
@@ -624,6 +629,19 @@ based on the SNT (Satellite-Node Topology) analysis results below.
 
 PATIENT: {patient_id}
 CLINICAL NOTES: {clinical_notes}
+
+=== MEASUREMENT FRAME θ (SNT v2.7.1 — tela de incertidumbre, Axioma 0.2) ===
+- B (base): razón R = TPM(satélite)/TPM(hub) por par hub-satélite
+- V (variables/proxy): m = R, proxy declarado; u = NULL por diseño (no se
+  inventa un tercer eje)
+- ρ (resolución): 1 sección transversal por paciente
+- W (ventana): un punto temporal — sin trayectoria longitudinal
+- λ (umbral): |Z| > 2.5 contra baseline empírico n=40 TCGA normal-adyacente
+Lo reportado es una sombra Π_θ bajo ESTE marco: distinta patología puede
+producir la misma sombra. Cita siempre el Z medido y el tier de evidencia
+(EMPIRICAL_5EVENT = firmas del muro de 5 eventos, n=2,746 pacientes TCGA;
+CURATED_LITERATURE = firmas curadas de literatura, sin calibración de
+cohortes). NO reportes la columna legacy de "confidence" como probabilidad.
 
 === SNT TWO-LEVEL ANALYSIS RESULTS ===
 
@@ -642,7 +660,8 @@ ACO-A — ORBITAL COLLAPSE ANALYSIS (b⊥Δ framework):
 === REPORT INSTRUCTIONS ===
 Generate a professional medical report with the following sections:
 1. EXECUTIVE SUMMARY (2-3 sentences, plain language for oncologist)
-2. CONFIRMED FINDINGS (explain each confirmed disease match in clinical terms)
+2. CONFIRMED FINDINGS (explain each confirmed disease match in clinical
+   terms; state its evidence tier explicitly — empirical vs curated)
 3. NOVEL ANOMALIES (describe orphan anomalies as potential new biomarkers)
 4. FUNCTIONAL INTERPRETATION (explain what HUB_COLLAPSE / LEAPFROG / SATELLITE_CAPTURE 
    means biologically for this patient's case)

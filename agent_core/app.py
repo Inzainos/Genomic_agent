@@ -269,7 +269,7 @@ with tab_analysis:
                             "Z-Score":    f"{m.detected_z_score:+.3f}",
                             "Type":       m.expected_anomaly,
                             "Status":     "✅ CONFIRMED" if m.confirmed else "⚪ Tentative",
-                            "Confidence": f"{m.confidence_score:.0%}",
+                            "Evidence":   m.evidence_tier,
                         }
                         for m in sorted(
                             report.triage_matches,
@@ -334,7 +334,7 @@ with tab_analysis:
                             "Hub":           a.hub_gene,
                             "Modo":          f"{icon} {a.collapse_mode.replace('_',' ')}",
                             "Δ (absorción)": delta_str,
-                            "F (fricción)":  f"{a.friction_index:.2f}",
+                            "F (fricción, proxy)":  f"{a.friction_index:.2f}",
                             "Trigger":       a.trigger,
                             "Piso":          "✅" if a.has_floor else "❌",
                             "Absorbedor":    a.absorber_gene,

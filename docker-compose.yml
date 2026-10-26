@@ -27,6 +27,7 @@ services:
     build:
       context: ./genomic_database
       dockerfile: Dockerfile
+      network: host   # DNS embebido de Docker roto en WSL2 (2026-10-25); red del host SÍ resuelve — medido
     container_name: snt_db_builder
     volumes:
       - snt_data:/data
@@ -46,6 +47,7 @@ services:
     build:
       context: ./mock_services
       dockerfile: Dockerfile
+      network: host   # DNS embebido de Docker roto en WSL2 (2026-10-25); red del host SÍ resuelve — medido
     container_name: snt_mock_services
     ports:
       - "127.0.0.1:8081:8081"
@@ -72,6 +74,7 @@ services:
     build:
       context: ./agent_core
       dockerfile: Dockerfile
+      network: host   # DNS embebido de Docker roto en WSL2 (2026-10-25); red del host SÍ resuelve — medido
     container_name: snt_agent_core
     ports:
       - "127.0.0.1:8501:8501"

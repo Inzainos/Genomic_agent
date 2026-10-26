@@ -323,8 +323,47 @@ def create_schema(conn: sqlite3.Connection) -> None:
                 CHECK(expected_anomaly IN ('LEAPFROG','SATELLITE_CAPTURE','HUB_COLLAPSE')),
             chromosome      TEXT NOT NULL DEFAULT 'unknown',
             confidence_score REAL NOT NULL DEFAULT 0.80,
+            evidence_tier   TEXT NOT NULL DEFAULT 'CURATED_LITERATURE',
             created_at      TEXT DEFAULT (datetime('now'))
         )
+    """)
+    # Migración forward-only (regla 5 del workspace): la columna existe desde
+    # SNT v2.7.1; las DBs de volúmenes previos la reciben por ALTER.
+    cols = {r[1] for r in cursor.execute(
+        "PRAGMA table_info(disease_snt_signatures)").fetchall()}
+    if "evidence_tier" not in cols:
+        cursor.execute(
+            "ALTER TABLE disease_snt_signatures ADD COLUMN evidence_tier "
+            "TEXT NOT NULL DEFAULT 'CURATED_LITERATURE'")
+        logger.info("Migration: added evidence_tier to disease_snt_signatures")
+    # Tier de evidencia por fila — idempotente: firma del muro de 5 eventos
+    # (n=2,746 pacientes TCGA) = EMPIRICAL_5EVENT; el resto = CURATED_LITERATURE.
+    cursor.execute(
+        """
+        UPDATE disease_snt_signatures
+        SET evidence_tier = CASE WHEN disease_name LIKE '%_5EW_%'
+                                 THEN 'EMPIRICAL_5EVENT'
+                                 ELSE 'CURATED_LITERATURE' END
+        """
+    )
+    logger.info(
+        "Evidence tiers: %d EMPIRICAL_5EVENT, rest CURATED_LITERATURE",
+        cursor.execute("SELECT COUNT(*) FROM disease_snt_signatures "
+                       "WHERE evidence_tier='EMPIRICAL_5EVENT'").fetchone()[0],
+    )
+    # BUG FIX (2026-10-25, medido: 176/44 filas duplicadas tras 4 builds):
+    # el INSERT OR IGNORE sin restricción UNIQUE nunca ignoraba — cada
+    # arranque re-sembraba las 44 firmas. Dedup (conserva el id mínimo)
+    # + índice único; a partir de aquí el OR IGNORE tiene contra qué chocar.
+    cursor.execute("""
+        DELETE FROM disease_snt_signatures WHERE id NOT IN (
+            SELECT MIN(id) FROM disease_snt_signatures
+            GROUP BY disease_name, hub_gene_id, satellite_gene_id)
+    """)
+    cursor.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_disease_signature
+        ON disease_snt_signatures(disease_name, hub_gene_id,
+                                   satellite_gene_id)
     """)
 
     logger.debug("Creating table: auto_healing_patterns")
@@ -462,15 +501,17 @@ def seed_disease_signatures(conn: sqlite3.Connection) -> int:
     cursor = conn.cursor()
     inserted = 0
     for row in DISEASE_SNT_SIGNATURES:
+        tier = "EMPIRICAL_5EVENT" if "_5EW_" in row[0] else "CURATED_LITERATURE"
         try:
             cursor.execute(
                 """
                 INSERT OR IGNORE INTO disease_snt_signatures
                     (disease_name, hub_gene_id, satellite_gene_id,
-                     expected_anomaly, chromosome, confidence_score)
-                VALUES (?, ?, ?, ?, ?, ?)
+                     expected_anomaly, chromosome, confidence_score,
+                     evidence_tier)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                row,
+                row + (tier,),
             )
             if cursor.rowcount > 0:
                 inserted += 1
